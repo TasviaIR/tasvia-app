@@ -1,32 +1,72 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { createTrialWorkspaceAction } from "./actions";
+
+export const metadata: Metadata = {
+  title: "شروع ۱۵ روز رایگان تسوین",
+  description: "فضای کاری حسابداری خود را بسازید و ۱۵ روز کامل تسوین را رایگان استفاده کنید.",
+  robots: { index: false, follow: false },
+};
 
 export default function OnboardingPage() {
   return (
-    <main dir="rtl" className="min-h-screen bg-[#f4f7fb] px-3 py-4 text-[#0b1220] sm:px-6">
+    <main dir="rtl" className="min-h-screen bg-[#f4f7fb] px-4 py-10 text-[#0b1220] sm:px-6">
       <div className="mx-auto max-w-2xl">
-        <div className="mb-5">
-          <div className="text-[11px] font-extrabold text-[#008f87]">Demo Onboarding</div>
-          <h1 className="mt-1 text-2xl font-black">کسب‌وکار فعال</h1>
-          <p className="mt-2 text-sm leading-7 text-[#657184]">در این نسخه فقط یک انتخاب نمایشی برای تست جریان محصول داریم.</p>
+        <div className="mb-6">
+          <div className="text-xs font-black text-[#008f87]">شروع تسوین</div>
+          <h1 className="mt-2 text-3xl font-black">۱۵ روز استفاده کامل و رایگان</h1>
+          <p className="mt-3 text-sm leading-7 text-[#657184]">
+            فضای کاری واقعی شما همراه با اشتراک آزمایشی به‌صورت هم‌زمان ساخته می‌شود.
+            پس از پایان دوره، اطلاعات حذف نمی‌شوند و تا فعال‌سازی اشتراک در حالت فقط‌خواندنی باقی می‌مانند.
+          </p>
         </div>
 
-        <section className="space-y-4 rounded-[24px] border border-black/5 bg-white p-4 shadow-sm sm:p-5">
-          <div className="rounded-2xl border border-[#00a99d]/30 bg-[#ecfbf8] p-4">
-            <div className="text-[10px] font-extrabold text-[#008f87]">انتخاب‌شده</div>
-            <div className="mt-2 text-lg font-black">کافه نمونه تسوین</div>
-            <div className="mt-2 text-xs text-[#657184]">شعبه مرکزی · Demo Mode</div>
+        <form action={createTrialWorkspaceAction} className="space-y-5 rounded-[28px] border border-black/5 bg-white p-5 shadow-sm sm:p-7">
+          <div>
+            <label htmlFor="workspace-name" className="text-sm font-black">
+              نام کسب‌وکار یا مجموعه
+            </label>
+            <input
+              id="workspace-name"
+              name="name"
+              required
+              minLength={2}
+              maxLength={120}
+              autoComplete="organization"
+              placeholder="مثلاً کافه مرکزی"
+              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#00a99d]"
+            />
           </div>
 
-          <div className="rounded-2xl border border-black/5 p-4">
-            <div className="text-sm font-black">اطلاعات نمونه</div>
-            <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
-              <div className="rounded-xl bg-[#f7f9fc] p-3"><div className="text-[#8a94a3]">نوع کسب‌وکار</div><div className="mt-1 font-extrabold">کافه</div></div>
-              <div className="rounded-xl bg-[#f7f9fc] p-3"><div className="text-[#8a94a3]">تامین‌کنندگان</div><div className="mt-1 font-extrabold">۱۲ مورد</div></div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl bg-[#f7f9fc] p-4">
+              <div className="text-xs font-black">۱۵ روز کامل</div>
+              <div className="mt-1 text-xs leading-6 text-[#657184]">بدون حذف داده در پایان دوره</div>
+            </div>
+            <div className="rounded-2xl bg-[#f7f9fc] p-4">
+              <div className="text-xs font-black">تمام امکانات طرح آغاز</div>
+              <div className="mt-1 text-xs leading-6 text-[#657184]">برای ارزیابی واقعی محصول</div>
+            </div>
+            <div className="rounded-2xl bg-[#f7f9fc] p-4">
+              <div className="text-xs font-black">امن و حسابرسی‌پذیر</div>
+              <div className="mt-1 text-xs leading-6 text-[#657184]">نوشتن مالی فقط با مجوز اشتراک</div>
             </div>
           </div>
 
-          <Link href="/" className="block min-h-12 rounded-2xl bg-[#0f223d] px-4 py-3 text-center text-xs font-extrabold text-white">ورود به داشبورد</Link>
-        </section>
+          <button
+            type="submit"
+            className="min-h-12 w-full rounded-2xl bg-[#0f223d] px-4 py-3 text-sm font-black text-white"
+          >
+            ساخت فضای کاری و شروع ۱۵ روز رایگان
+          </button>
+
+          <p className="text-center text-xs leading-6 text-[#657184]">
+            حساب دارید؟{" "}
+            <Link className="font-black text-[#008f87]" href="/sign-in?next=/onboarding">
+              وارد شوید
+            </Link>
+          </p>
+        </form>
       </div>
     </main>
   );

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { prisma } from "../../lib/prisma";
+import { assertWorkspaceWriteEntitlement } from "../subscription/workspace-entitlement";
 
 export type SimplePersistedAction = "sale" | "purchase" | "receipt" | "payment" | "expense";
 
@@ -83,6 +84,7 @@ export async function listSimpleWorkflowOptions(workspaceId: string, action: Sim
 
 export async function executeSimpleWorkflow(input: ExecuteSimpleWorkflowInput) {
   assertFinancialWriteEnvironment();
+  await assertWorkspaceWriteEntitlement(input.workspaceId);
   requirePositiveAmount(input.amountRials);
   if (!input.idempotencyKey.trim()) throw new Error("IDEMPOTENCY_KEY_REQUIRED");
 

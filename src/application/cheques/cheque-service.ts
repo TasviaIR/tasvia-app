@@ -4,7 +4,12 @@ import {
   type ChequeStatus,
 } from "../../domain/accounting/cheque";
 import { assertFinancialWriteEnvironment } from "../accounting/simple-workflow-persistence";
-import { executeSettlement } from "../settlements/settlement-service";
+import { assertWorkspaceWriteEntitlement } from "../subscription/workspace-entitlement";
+import {
+  executeSettlementInTransaction,
+  type TreasuryAccountCode,
+} from "../settlements/settlement-service";
+import { recordAuditEventInTransaction } from "../audit/audit-service";
 
 export async function listChequeOptions(workspaceId: string) {
   const [counterparties, balances] = await Promise.all([
@@ -49,6 +54,7 @@ export async function createCheque(input: {
   openBalanceId?: string;
 }) {
   assertFinancialWriteEnvironment();
+  await assertWorkspaceWriteEntitlement(input.workspaceId);
 
   if (!input.chequeNumber.trim()) throw new Error("CHEQUE_NUMBER_REQUIRED");
   if (input.amount <= 0n) throw new Error("CHEQUE_AMOUNT_INVALID");
@@ -82,7 +88,7 @@ export async function createCheque(input: {
       }
     }
 
-    return tx.chequeRecord.create({
+    const created = await tx.chequeRecord.create({
       data: {
         workspaceId: input.workspaceId,
         counterpartyId: input.counterpartyId,
@@ -97,6 +103,24 @@ export async function createCheque(input: {
         createdBy: input.actorId,
       },
     });
+
+    await recordAuditEventInTransaction(tx, {
+      workspaceId: input.workspaceId,
+      actorId: input.actorId,
+      action: "CHEQUE_CREATED",
+      category: "CHEQUE",
+      entityType: "ChequeRecord",
+      entityId: created.id,
+      after: {
+        direction: created.direction,
+        chequeNumber: created.chequeNumber,
+        amount: created.amount,
+        status: created.status,
+        dueAt: created.dueAt,
+      },
+    });
+
+    return created;
   });
 }
 
@@ -105,8 +129,10 @@ export async function updateChequeStatus(input: {
   actorId: string;
   chequeId: string;
   nextStatus: ChequeStatus;
+  treasuryAccountCode?: TreasuryAccountCode;
 }) {
   assertFinancialWriteEnvironment();
+  await assertWorkspaceWriteEntitlement(input.workspaceId);
 
   return prisma.$transaction(async (tx) => {
     const current = await tx.chequeRecord.findFirst({
@@ -137,12 +163,16 @@ export async function updateChequeStatus(input: {
         return current;
       }
 
-      const result = await executeSettlement({
+      if (!input.treasuryAccountCode) {
+        throw new Error("TREASURY_ACCOUNT_REQUIRED_FOR_CHEQUE_CLEARING");
+      }
+
+      const result = await executeSettlementInTransaction(tx, {
         workspaceId: input.workspaceId,
         actorId: input.actorId,
         direction: current.direction === "RECEIVED" ? "RECEIPT" : "PAYMENT",
         openBalanceId: current.openBalanceId,
-        treasuryAccountCode: "1102",
+        treasuryAccountCode: input.treasuryAccountCode,
         amountRials: current.amount,
         occurredAt: new Date(),
         idempotencyKey: `cheque-clear:${input.workspaceId}:${current.id}`,
@@ -152,19 +182,36 @@ export async function updateChequeStatus(input: {
             : `پاس شدن چک ${current.chequeNumber}`,
       });
 
-      return tx.chequeRecord.update({
+      const updated = await tx.chequeRecord.update({
         where: { id: current.id },
         data: {
           status: transitioned.status,
-          treasuryAccountCode: "1102",
+          treasuryAccountCode: input.treasuryAccountCode,
           clearedJournalId: result.journal.id,
           statusChangedBy: input.actorId,
           statusChangedAt: new Date(),
         },
       });
+
+      await recordAuditEventInTransaction(tx, {
+        workspaceId: input.workspaceId,
+        actorId: input.actorId,
+        action: "CHEQUE_STATUS_CHANGED",
+        category: "CHEQUE",
+        entityType: "ChequeRecord",
+        entityId: current.id,
+        before: { status: current.status },
+        after: { status: updated.status },
+        metadata: {
+          clearedJournalId: result.journal.id,
+          treasuryAccountCode: input.treasuryAccountCode,
+        },
+      });
+
+      return updated;
     }
 
-    return tx.chequeRecord.update({
+    const updated = await tx.chequeRecord.update({
       where: { id: current.id },
       data: {
         status: transitioned.status,
@@ -172,5 +219,19 @@ export async function updateChequeStatus(input: {
         statusChangedAt: new Date(),
       },
     });
+
+    await recordAuditEventInTransaction(tx, {
+      workspaceId: input.workspaceId,
+      actorId: input.actorId,
+      action: "CHEQUE_STATUS_CHANGED",
+      category: "CHEQUE",
+      severity: updated.status === "BOUNCED" ? "WARNING" : "INFO",
+      entityType: "ChequeRecord",
+      entityId: current.id,
+      before: { status: current.status },
+      after: { status: updated.status },
+    });
+
+    return updated;
   });
 }

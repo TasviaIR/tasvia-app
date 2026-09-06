@@ -11,7 +11,10 @@ const items = [
   ["/app/treasury", "خزانه", "◉"],
   ["/app/inventory", "انبار", "◇"],
   ["/app/cheques", "چک‌ها", "▤"],
+  ["/app/customers", "مشتریان", "♙"],
   ["/app/suppliers", "تأمین‌کنندگان", "♙"],
+  ["/app/payroll", "حقوق و دستمزد", "₮"],
+  ["/app/fixed-assets", "دارایی ثابت", "◆"],
   ["/accounting/professional", "حسابداری", "≡"],
   ["/app/settlements", "تسویه‌ها", "⇄"],
   ["/app/reconciliation", "مغایرت‌گیری", "◎"],
@@ -19,6 +22,8 @@ const items = [
   ["/app/fiscal-close", "دوره مالی", "◷"],
   ["/app/commercial-controls", "کنترل‌های تجاری", "⌁"],
   ["/app/operations-controls", "عملیات", "⚙"],
+  ["/app/subscription", "اشتراک", "★"],
+  ["/app/api-keys", "اتصال API", "⌁"],
   ["/app/platform-controls", "تنظیمات", "⚑"],
 ] as const;
 

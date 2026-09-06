@@ -33,6 +33,15 @@ export default function ProfessionalAccountingPage() {
           </div>
         </div>
 
+        <div className="mt-6 flex justify-end">
+          <Link
+            href="/app/dimensions/assignments"
+            className="rounded-2xl border border-[#008f87]/20 bg-[#f1fbfa] px-5 py-3 text-sm font-black text-[#00776f]"
+          >
+            تخصیص شعبه، مرکز هزینه و پروژه به اسناد ←
+          </Link>
+        </div>
+
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {modules.map(([title, description]) => (
             <article key={title} className="rounded-[26px] border border-black/5 bg-white p-5">

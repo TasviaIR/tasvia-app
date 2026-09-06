@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    // Keep static-generation concurrency predictable on constrained builders.
+    cpus: 2,
+  },
 };
 
 export default nextConfig;

@@ -1,46 +1,13 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-
-export const metadata: Metadata = {
-  title: "توسعه‌دهندگان و API",
-  description: "قراردادهای توسعه‌دهندگان تسوین برای API، Webhook، idempotency و یکپارچه‌سازی‌های امن.",
-  alternates: { canonical: "/developers" },
-};
-
-const principles = [
-  ["Server-side auth", "دسترسی‌های توسعه‌دهنده باید به Workspace و نقش معتبر متصل باشند."],
-  ["Idempotency", "درخواست‌های مالی تکراری با کلید یکتا نباید عملیات مالی را دوباره ایجاد کنند."],
-  ["Signed webhooks", "تحویل رویداد باید امضا، delivery ID و سیاست retry قابل حسابرسی داشته باشد."],
-  ["Auditability", "هر عملیات حساس باید actor، زمان، منبع و نتیجه قابل پیگیری داشته باشد."],
-] as const;
-
-export default function Page() {
-  return (
-    <main className="min-h-screen bg-[#0b1220] px-4 py-12 text-white sm:px-6" dir="rtl">
-      <div className="mx-auto max-w-6xl">
-        <span className="rounded-full bg-white/10 px-3 py-2 text-xs font-black text-[#63dfd4]">DEVELOPER CONTRACTS</span>
-        <h1 className="mt-5 max-w-4xl text-4xl font-black">معماری توسعه‌دهندگان تسوین از الان قرارداد مشخص دارد؛ انتشار API عمومی مرحله جداست.</h1>
-        <p className="mt-5 max-w-4xl text-base leading-8 text-white/65">Domain و Integration boundaryهای لازم برای فروشگاه، اعلان، POS، سامانه مودیان، استعلام و عملیات مالی تعریف شده‌اند. API عمومی Production فقط پس از تکمیل authentication، rate limit، credential management و sandbox رسمی منتشر می‌شود.</p>
-
-        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {principles.map(([title,text]) => <article key={title} className="rounded-3xl border border-white/10 bg-white/5 p-5"><h2 className="font-black text-[#63dfd4]">{title}</h2><p className="mt-3 text-sm leading-7 text-white/60">{text}</p></article>)}
-        </div>
-
-        <div className="mt-8 grid gap-5 lg:grid-cols-2">
-          <pre className="overflow-x-auto rounded-3xl border border-white/10 bg-black/20 p-5 text-left text-xs leading-7" dir="ltr">{`POST /v1/settlements
-Authorization: Bearer <server-token>
-Idempotency-Key: <unique-key>
-
-202 Accepted
-{
-  "id": "stl_...",
-  "status": "REVIEW_REQUIRED"
-}`}</pre>
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-6"><div className="text-xs font-black text-[#63dfd4]">Production boundary</div><h2 className="mt-2 text-xl font-black">هیچ endpoint نمونه‌ای در این صفحه به معنی انتقال پول واقعی نیست.</h2><p className="mt-4 text-sm leading-7 text-white/60">PSP، بانک، مالیات و استعلام فقط پس از credential رسمی و Gate عملیاتی فعال می‌شوند. این تفکیک مانع تبدیل مستندات توسعه‌دهنده به ادعای قابلیت Production نشده می‌شود.</p></div>
-        </div>
-
-        <div className="mt-8 flex flex-wrap gap-3"><Link href="/integrations" className="rounded-2xl bg-[#63dfd4] px-5 py-3 text-sm font-black text-[#0b1220]">وضعیت یکپارچه‌سازی‌ها</Link><Link href="/security" className="rounded-2xl border border-white/20 px-5 py-3 text-sm font-black">مدل امنیت</Link></div>
-      </div>
-    </main>
-  );
-}
+const endpoints=[
+ ["GET","/api/v1/customers","customers:read"],["GET","/api/v1/suppliers","suppliers:read"],
+ ["GET","/api/v1/sales","sales:read"],["GET","/api/v1/purchases","purchases:read"],
+ ["GET","/api/v1/inventory","inventory:read"],["GET","/api/v1/treasury","treasury:read"],
+ ["GET","/api/v1/reports/summary","reports:read"]
+];
+export default function DevelopersPage(){return <main dir="rtl" className="min-h-screen bg-[#f5f7fa] px-4 py-16 text-[#0f223d]"><div className="mx-auto max-w-5xl">
+ <p className="font-black text-[#008f87]">Tasvin API v1</p><h1 className="mt-2 text-4xl font-black">پلتفرم توسعه‌دهندگان تسوین</h1>
+ <p className="mt-4 max-w-3xl text-slate-500">API نسخه‌بندی‌شده و Workspace-scoped برای اتصال رست‌یار و سامانه‌های خارجی. احراز هویت با Bearer API Key و Scope انجام می‌شود.</p>
+ <pre dir="ltr" className="mt-7 overflow-x-auto rounded-2xl bg-[#0f223d] p-5 text-sm text-white">Authorization: Bearer tv_live_...</pre>
+ <div className="mt-8 overflow-x-auto rounded-3xl border bg-white p-5"><table className="w-full text-sm"><thead><tr><th>Method</th><th>Endpoint</th><th>Scope</th></tr></thead><tbody>{endpoints.map(e=><tr key={e[1]}><td dir="ltr">{e[0]}</td><td dir="ltr">{e[1]}</td><td dir="ltr">{e[2]}</td></tr>)}</tbody></table></div>
+ <section className="mt-7 rounded-3xl border bg-white p-6"><h2 className="text-xl font-black">قرارداد امنیتی V1</h2><p className="mt-3 text-sm leading-7 text-slate-500">کلیدها قابل لغو هستند، فقط هش Secret ذخیره می‌شود، هر درخواست به Workspace همان کلید محدود است و V1 در این مرحله فقط خواندنی است. عملیات مالی نوشتنی تا تکمیل idempotency و کنترل‌های مالی API فعال نمی‌شود.</p></section>
+ </div></main>}
