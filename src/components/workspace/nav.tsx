@@ -2,6 +2,7 @@ import Link from "next/link";
 
 const items = [
   ["/app", "نمای کلی"],
+  ["/app/accounting", "حسابداری"],
   ["/app/sales", "فروش"],
   ["/app/purchases", "خرید"],
   ["/app/treasury", "خزانه"],
