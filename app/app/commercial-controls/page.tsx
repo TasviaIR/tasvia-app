@@ -1,30 +1,59 @@
 import Link from "next/link";
 import { WorkspaceShell } from "../../../src/components/workspace/shell";
+import { requireCurrentWorkspace } from "../../../src/auth/current-workspace";
+import { prisma } from "../../../src/lib/prisma";
 
-const capabilities = [
-  ["چندارزی", "ثبت مبلغ با ارز منبع، نرخ صریح و اثر تسعیر بدون محاسبات اعشاری شناور."],
-  ["فروش اقساطی", "تقسیم دقیق مبلغ به اقساط، سررسید، مانده و پیگیری پرداخت هر قسط."],
-  ["سطوح قیمت", "قیمت عمده، همکار، ویژه و سیاست‌های اختصاصی مشتری روی یک قیمت پایه."],
-  ["تخفیف هوشمند", "قواعد درصدی و مبلغ ثابت با حداقل خرید، بازه زمانی و سقف امن."],
-  ["پورسانت فروش", "محاسبه پورسانت بازاریاب بر مبنای فروش ناخالص یا خالص پس از تخفیف."],
-  ["بارکد", "شناسه امن کالا برای چاپ، اسکن و اتصال به عملیات انبار و فروش."],
-  ["بانک و چک", "خزانه، دریافت و پرداخت، سررسید چک و مغایرت‌گیری روی دفتر واقعی."],
-] as const;
+export default async function CommercialControlsPage() {
+  const current = await requireCurrentWorkspace();
 
-export default function CommercialControlsPage() {
+  const [customers, suppliers, products, invoices, purchases, openBalances] =
+    await Promise.all([
+      prisma.counterparty.count({
+        where: { workspaceId: current.workspace.id, type: { in: ["CUSTOMER", "BOTH"] }, active: true },
+      }),
+      prisma.counterparty.count({
+        where: { workspaceId: current.workspace.id, type: { in: ["SUPPLIER", "BOTH"] }, active: true },
+      }),
+      prisma.catalogItem.count({
+        where: { workspaceId: current.workspace.id, active: true },
+      }),
+      prisma.salesInvoice.count({
+        where: { workspaceId: current.workspace.id },
+      }),
+      prisma.purchaseInvoice.count({
+        where: { workspaceId: current.workspace.id },
+      }),
+      prisma.openBalance.count({
+        where: { workspaceId: current.workspace.id, status: { in: ["OPEN", "PARTIALLY_PAID"] } },
+      }),
+    ]);
+
+  const cards = [
+    ["/app/customers", "مشتریان", `${customers} مشتری فعال`, "اشخاص، مانده، گردش و دریافتنی"],
+    ["/app/suppliers", "تأمین‌کنندگان", `${suppliers} تأمین‌کننده فعال`, "بدهی، گردش و پرداختنی"],
+    ["/app/sales", "فروش و فاکتور", `${invoices} فاکتور`, "فروش، برگشت، دریافت و سند حسابداری"],
+    ["/app/purchases", "خرید و هزینه", `${purchases} سند خرید`, "خرید، هزینه، بدهی و سند حسابداری"],
+    ["/app/inventory", "کالا و انبار", `${products} کالا/خدمت`, "موجودی، گردش کالا و بهای تمام‌شده"],
+    ["/app/settlements", "تسویه‌ها", `${openBalances} مانده باز`, "دریافت، پرداخت و تخصیص به مانده‌ها"],
+    ["/app/treasury", "خزانه", "بانک، صندوق و جریان نقد", "دریافت/پرداخت و انتقال وجه"],
+    ["/app/cheques", "چک‌ها", "چرخه وصول و برگشت", "ثبت، سررسید، وصول، برگشت و Audit"],
+  ] as const;
+
   return (
-    <WorkspaceShell title="کنترل‌های تجاری" eyebrow="فروش حرفه‌ای" actions={<Link href="/app/sales" className="rounded-xl bg-[#102845] px-3 py-2 text-xs font-black text-white">فروش و فاکتور</Link>}>
-      <section className="rounded-[26px] bg-[#102845] p-5 text-white sm:p-7">
-        <h2 className="text-2xl font-black">قیمت، ارز، تخفیف و اقساط روی یک حقیقت مالی.</h2>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-white/65">تمام کنترل‌های تجاری باید روی همان سند، مانده و دفتر حسابداری کار کنند؛ بدون لایه نمایشی جدا و بدون اقدام مالی برگشت‌ناپذیر خودکار.</p>
-      </section>
-      <section className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {capabilities.map(([title, description]) => <article key={title} className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex items-center justify-between gap-3"><h2 className="font-black">{title}</h2><span className="rounded-full bg-[#e8faf7] px-2.5 py-1 text-[10px] font-black text-[#007f78]">هسته فعال</span></div><p className="mt-3 text-sm leading-7 text-[#657184]">{description}</p></article>)}
-      </section>
-      <section className="mt-5 grid gap-4 lg:grid-cols-3">
-        <article className="rounded-2xl border border-slate-200 bg-white p-5"><div className="text-xs font-black text-[#0b8d85]">دقت مالی</div><p className="mt-2 text-sm leading-7 text-[#657184]">پول با واحد صحیح نگهداری می‌شود تا اختلاف اعشاری در قیمت، تخفیف و اقساط ایجاد نشود.</p></article>
-        <article className="rounded-2xl border border-slate-200 bg-white p-5"><div className="text-xs font-black text-[#0b8d85]">کنترل انسانی</div><p className="mt-2 text-sm leading-7 text-[#657184]">اتوماسیون پیشنهاد می‌دهد؛ عملیات حساس همچنان Approval می‌خواهد.</p></article>
-        <article className="rounded-2xl border border-slate-200 bg-white p-5"><div className="text-xs font-black text-[#0b8d85]">اتصال عملیاتی</div><p className="mt-2 text-sm leading-7 text-[#657184]">کنترل‌ها به فروش، انبار و خزانه متصل‌اند و از مسیرهای همان Workspace استفاده می‌کنند.</p></article>
+    <WorkspaceShell
+      title="مرکز عملیات تجاری"
+      eyebrow="فروش، خرید، اشخاص، کالا، خزانه و تسویه روی یک حقیقت مالی"
+      actions={<Link href="/app/accounting" className="rounded-xl bg-[#102845] px-4 py-2.5 text-xs font-black text-white">مرکز حسابداری</Link>}
+    >
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {cards.map(([href,title,value,description]) => (
+          <Link key={href} href={href} className="rounded-3xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-[#008f87]/40">
+            <div className="text-xs font-black text-[#008f87]">{value}</div>
+            <h2 className="mt-2 text-lg font-black text-[#0f223d]">{title}</h2>
+            <p className="mt-3 text-xs leading-6 text-slate-500">{description}</p>
+            <div className="mt-5 text-xs font-black text-[#00776f]">ورود ←</div>
+          </Link>
+        ))}
       </section>
     </WorkspaceShell>
   );

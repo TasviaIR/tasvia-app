@@ -1,21 +1,46 @@
 import Link from "next/link";
 import { WorkspaceShell } from "../../../src/components/workspace/shell";
+import { requireCurrentWorkspace } from "../../../src/auth/current-workspace";
+import { prisma } from "../../../src/lib/prisma";
 
-const capabilities = [
-  ["آرشیو مدارک", "ضمیمه امن فاکتور، رسید، چک و قرارداد با هش محتوای قابل ردیابی."],
-  ["پیامک و اعلان‌ها", "قرارداد چندکاناله برای سررسید، پرداخت، کمبود موجودی و مغایرت؛ ارسال واقعی فقط با Provider مجاز."],
-  ["فرم‌ساز", "فیلدهای سفارشی کنترل‌شده برای فرایندهای داخلی بدون تغییر هسته حسابداری."],
-  ["بستن سال مالی", "Gate سخت‌گیرانه برای اسناد ثبت‌نشده، مغایرت‌های بحرانی و حساب سود و زیان انباشته."],
-  ["تجمیع اسناد", "تجمیع کنترل‌شده خطوط هم‌حساب بدون از بین‌بردن Traceability اسناد منبع."],
-  ["تولید و BOM", "محاسبه بهای مواد اولیه با واحدهای پول صحیح و مرز روشن برای ثبت تولید."],
-  ["فروشگاه آنلاین", "Envelope استاندارد برای WooCommerce، Shopify و API اختصاصی با شناسه سفارش idempotent."],
-] as const;
+export default async function OperationsControlsPage() {
+  const current = await requireCurrentWorkspace();
 
-export default function OperationsControlsPage() {
+  const [evidence, dimensions, payroll, assets, periods, audits] = await Promise.all([
+    prisma.financialEvidence.count({ where: { workspaceId: current.workspace.id, archivedAt: null } }),
+    prisma.accountingDimensionValue.count({ where: { workspaceId: current.workspace.id, active: true } }),
+    prisma.payrollRun.count({ where: { workspaceId: current.workspace.id } }),
+    prisma.fixedAsset.count({ where: { workspaceId: current.workspace.id } }),
+    prisma.fiscalPeriod.count({ where: { workspaceId: current.workspace.id } }),
+    prisma.auditEvent.count({ where: { workspaceId: current.workspace.id } }),
+  ]);
+
+  const modules = [
+    ["/app/evidence", "آرشیو و مستندات", `${evidence} مدرک فعال`, "فایل، هش، منبع و سابقه آرشیو"],
+    ["/app/dimensions", "ابعاد حسابداری", `${dimensions} مقدار فعال`, "شعبه، مرکز هزینه و پروژه"],
+    ["/app/payroll", "حقوق و دستمزد", `${payroll} دوره حقوق`, "کارکنان، محاسبات و ثبت حسابداری"],
+    ["/app/fixed-assets", "دارایی ثابت", `${assets} دارایی`, "تحصیل، استهلاک و ارزش دفتری"],
+    ["/app/fiscal-close", "سال و دوره مالی", `${periods} دوره`, "قفل، بستن، بازگشایی و کنترل دوره"],
+    ["/app/audit", "ردپای حسابرسی", `${audits} رویداد`, "Actor، زمان، before/after و reason"],
+    ["/app/reconciliation", "مغایرت‌گیری", "کنترل بانکی", "تطبیق شواهد بانکی با حقیقت خزانه"],
+    ["/app/reports/financial", "گزارش‌های مالی", "دفتر و صورت مالی", "تراز، سود و زیان، ترازنامه و جریان نقد"],
+  ] as const;
+
   return (
-    <WorkspaceShell title="کنترل‌های عملیاتی" eyebrow="عملیات پیشرفته" actions={<Link href="/app/reports/financial" className="rounded-xl bg-[#102845] px-3 py-2 text-xs font-black text-white">گزارش‌ها</Link>}>
-      <section className="rounded-[26px] bg-[#102845] p-5 text-white sm:p-7"><h2 className="text-2xl font-black">عملیات پیشرفته بدون شکستن Traceability.</h2><p className="mt-3 max-w-3xl text-sm leading-7 text-white/65">آرشیو، اعلان، فرم، بستن سال، تجمیع، تولید و فروشگاه آنلاین باید همگی قابل کنترل، قابل Audit و متصل به حقیقت حسابداری باشند.</p></section>
-      <section className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{capabilities.map(([title, description]) => <article key={title} className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex items-center justify-between gap-3"><h2 className="font-black">{title}</h2><span className="rounded-full bg-[#fff7df] px-2.5 py-1 text-[10px] font-black text-[#8f6a00]">کنترل‌شده</span></div><p className="mt-3 text-sm leading-7 text-[#657184]">{description}</p></article>)}</section>
+    <WorkspaceShell
+      title="مرکز عملیات پیشرفته"
+      eyebrow="کنترل دوره، دارایی، حقوق، مستندات و حسابرسی متصل به هسته مالی"
+    >
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {modules.map(([href,title,value,description]) => (
+          <Link key={href} href={href} className="rounded-3xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-[#008f87]/40">
+            <div className="text-xs font-black text-[#008f87]">{value}</div>
+            <h2 className="mt-2 text-lg font-black text-[#0f223d]">{title}</h2>
+            <p className="mt-3 text-xs leading-6 text-slate-500">{description}</p>
+            <div className="mt-5 text-xs font-black text-[#00776f]">ورود ←</div>
+          </Link>
+        ))}
+      </section>
     </WorkspaceShell>
   );
 }
