@@ -11,6 +11,8 @@ test("P61 commercial hub uses persisted product truth and real routes", () => {
   assert.match(source, /\/app\/sales/);
   assert.match(source, /\/app\/purchases/);
   assert.match(source, /\/app\/treasury/);
+  assert.match(source, /createPriceLevelAction/);
+  assert.match(source, /createDiscountRuleAction/);
 });
 
 test("P61 operations hub exposes real persisted advanced modules", () => {

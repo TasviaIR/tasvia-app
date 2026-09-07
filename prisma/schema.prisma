@@ -232,35 +232,40 @@ model LegacyRecoveryGrant {
 }
 
 model Workspace {
-  id                   String                          @id @default(uuid())
-  name                 String
-  slug                 String                          @unique
-  memberships          Membership[]
-  accountingAccounts   AccountingAccount[]
-  fiscalPeriods        FiscalPeriod[]
-  fiscalReopenAudits   FiscalReopenAudit[]
-  accountingJournals   AccountingJournal[]
-  counterparties       Counterparty[]
-  openBalances         OpenBalance[]
-  catalogItems         CatalogItem[]
-  warehouses           Warehouse[]
-  stockMovements       StockMovement[]
-  purchaseInvoices     PurchaseInvoice[]
-  salesInvoices        SalesInvoice[]
-  chequeRecords        ChequeRecord[]
-  bankEvidence         BankEvidence[]
-  employees            Employee[]
-  payrollRuns          PayrollRun[]
-  fixedAssets          FixedAsset[]
-  assetDepreciations   AssetDepreciation[]
-  subscription         WorkspaceSubscription?
-  apiKeys              ApiKey[]
-  dimensionValues      AccountingDimensionValue[]
-  dimensionAssignments AccountingDimensionAssignment[]
-  auditEvents          AuditEvent[]
-  financialEvidence    FinancialEvidence[]
-  createdAt            DateTime                        @default(now())
-  updatedAt            DateTime                        @updatedAt
+  id                      String                          @id @default(uuid())
+  name                    String
+  slug                    String                          @unique
+  memberships             Membership[]
+  accountingAccounts      AccountingAccount[]
+  fiscalPeriods           FiscalPeriod[]
+  fiscalReopenAudits      FiscalReopenAudit[]
+  accountingJournals      AccountingJournal[]
+  counterparties          Counterparty[]
+  openBalances            OpenBalance[]
+  catalogItems            CatalogItem[]
+  warehouses              Warehouse[]
+  stockMovements          StockMovement[]
+  purchaseInvoices        PurchaseInvoice[]
+  salesInvoices           SalesInvoice[]
+  chequeRecords           ChequeRecord[]
+  bankEvidence            BankEvidence[]
+  employees               Employee[]
+  payrollRuns             PayrollRun[]
+  fixedAssets             FixedAsset[]
+  assetDepreciations      AssetDepreciation[]
+  subscription            WorkspaceSubscription?
+  apiKeys                 ApiKey[]
+  dimensionValues         AccountingDimensionValue[]
+  dimensionAssignments    AccountingDimensionAssignment[]
+  auditEvents             AuditEvent[]
+  financialEvidence       FinancialEvidence[]
+  commercialPriceLevels   CommercialPriceLevel[]
+  commercialDiscountRules CommercialDiscountRule[]
+  installmentPlans        InstallmentPlan[]
+  commissionRules         CommissionRule[]
+  currencyRates           CurrencyRate[]
+  createdAt               DateTime                        @default(now())
+  updatedAt               DateTime                        @updatedAt
 }
 
 model Membership {
@@ -978,4 +983,85 @@ model FinancialEvidence {
   @@index([workspaceId, category, createdAt])
   @@index([workspaceId, journalId])
   @@index([workspaceId, archivedAt])
+}
+
+model CommercialPriceLevel {
+  id                    String    @id @default(uuid())
+  workspaceId           String
+  workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  code                  String
+  name                  String
+  multiplierBasisPoints Int       @default(10000)
+  active                Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([workspaceId, code])
+  @@index([workspaceId, active])
+}
+
+model CommercialDiscountRule {
+  id                    String    @id @default(uuid())
+  workspaceId           String
+  workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  code                  String
+  name                  String
+  percentageBasisPoints Int       @default(0)
+  fixedAmount           BigInt    @default(0)
+  minimumPurchase       BigInt    @default(0)
+  active                Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([workspaceId, code])
+  @@index([workspaceId, active])
+}
+
+model InstallmentPlan {
+  id                String    @id @default(uuid())
+  workspaceId       String
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  code              String
+  name              String
+  installmentCount  Int
+  firstDueDays      Int       @default(0)
+  intervalDays      Int       @default(30)
+  markupBasisPoints Int       @default(0)
+  active            Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([workspaceId, code])
+  @@index([workspaceId, active])
+}
+
+model CommissionRule {
+  id              String    @id @default(uuid())
+  workspaceId     String
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  code            String
+  name            String
+  rateBasisPoints Int
+  basis           String    @default("NET_AFTER_DISCOUNT")
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([workspaceId, code])
+  @@index([workspaceId, active])
+}
+
+model CurrencyRate {
+  id          String    @id @default(uuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  currency    String
+  rateToIrr   BigInt
+  effectiveAt DateTime
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([workspaceId, currency, effectiveAt])
+  @@index([workspaceId, currency, active, effectiveAt])
 }

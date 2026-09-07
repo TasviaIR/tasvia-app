@@ -1,60 +1,14 @@
-import Link from "next/link";
 import { WorkspaceShell } from "../../../src/components/workspace/shell";
 import { requireCurrentWorkspace } from "../../../src/auth/current-workspace";
 import { prisma } from "../../../src/lib/prisma";
-
-export default async function CommercialControlsPage() {
-  const current = await requireCurrentWorkspace();
-
-  const [customers, suppliers, products, invoices, purchases, openBalances] =
-    await Promise.all([
-      prisma.counterparty.count({
-        where: { workspaceId: current.workspace.id, type: { in: ["CUSTOMER", "BOTH"] }, active: true },
-      }),
-      prisma.counterparty.count({
-        where: { workspaceId: current.workspace.id, type: { in: ["SUPPLIER", "BOTH"] }, active: true },
-      }),
-      prisma.catalogItem.count({
-        where: { workspaceId: current.workspace.id, active: true },
-      }),
-      prisma.salesInvoice.count({
-        where: { workspaceId: current.workspace.id },
-      }),
-      prisma.purchaseInvoice.count({
-        where: { workspaceId: current.workspace.id },
-      }),
-      prisma.openBalance.count({
-        where: { workspaceId: current.workspace.id, status: { in: ["OPEN", "PARTIALLY_PAID"] } },
-      }),
-    ]);
-
-  const cards = [
-    ["/app/customers", "مشتریان", `${customers} مشتری فعال`, "اشخاص، مانده، گردش و دریافتنی"],
-    ["/app/suppliers", "تأمین‌کنندگان", `${suppliers} تأمین‌کننده فعال`, "بدهی، گردش و پرداختنی"],
-    ["/app/sales", "فروش و فاکتور", `${invoices} فاکتور`, "فروش، برگشت، دریافت و سند حسابداری"],
-    ["/app/purchases", "خرید و هزینه", `${purchases} سند خرید`, "خرید، هزینه، بدهی و سند حسابداری"],
-    ["/app/inventory", "کالا و انبار", `${products} کالا/خدمت`, "موجودی، گردش کالا و بهای تمام‌شده"],
-    ["/app/settlements", "تسویه‌ها", `${openBalances} مانده باز`, "دریافت، پرداخت و تخصیص به مانده‌ها"],
-    ["/app/treasury", "خزانه", "بانک، صندوق و جریان نقد", "دریافت/پرداخت و انتقال وجه"],
-    ["/app/cheques", "چک‌ها", "چرخه وصول و برگشت", "ثبت، سررسید، وصول، برگشت و Audit"],
-  ] as const;
-
-  return (
-    <WorkspaceShell
-      title="مرکز عملیات تجاری"
-      eyebrow="فروش، خرید، اشخاص، کالا، خزانه و تسویه روی یک حقیقت مالی"
-      actions={<Link href="/app/accounting" className="rounded-xl bg-[#102845] px-4 py-2.5 text-xs font-black text-white">مرکز حسابداری</Link>}
-    >
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map(([href,title,value,description]) => (
-          <Link key={href} href={href} className="rounded-3xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-[#008f87]/40">
-            <div className="text-xs font-black text-[#008f87]">{value}</div>
-            <h2 className="mt-2 text-lg font-black text-[#0f223d]">{title}</h2>
-            <p className="mt-3 text-xs leading-6 text-slate-500">{description}</p>
-            <div className="mt-5 text-xs font-black text-[#00776f]">ورود ←</div>
-          </Link>
-        ))}
-      </section>
-    </WorkspaceShell>
-  );
-}
+import { listCommercialConfig } from "../../../src/application/commercial/commercial-config-service";
+import {createPriceLevelAction,createDiscountRuleAction,createInstallmentPlanAction,createCommissionRuleAction,createCurrencyRateAction,setBarcodeAction} from "./actions";
+const box="rounded-xl border border-slate-200 px-3 py-2 text-sm";const btn="rounded-xl bg-[#102845] px-4 py-2.5 text-xs font-black text-white";
+export default async function Page(){const c=await requireCurrentWorkspace();const [cfg,items,productCount,customers,suppliers,invoices,purchases,openBalances]=await Promise.all([listCommercialConfig(c.workspace.id),prisma.catalogItem.findMany({where:{workspaceId:c.workspace.id,active:true},orderBy:{name:"asc"},take:100}),prisma.catalogItem.count({where:{workspaceId:c.workspace.id,active:true}}),prisma.counterparty.count({where:{workspaceId:c.workspace.id,type:{in:["CUSTOMER","BOTH"]},active:true}}),prisma.counterparty.count({where:{workspaceId:c.workspace.id,type:{in:["SUPPLIER","BOTH"]},active:true}}),prisma.salesInvoice.count({where:{workspaceId:c.workspace.id}}),prisma.purchaseInvoice.count({where:{workspaceId:c.workspace.id}}),prisma.openBalance.count({where:{workspaceId:c.workspace.id,status:{in:["OPEN","PARTIALLY_PAID"]}}})]);return <WorkspaceShell title="موتور تجاری تسوین" eyebrow="قیمت‌گذاری، تخفیف، اقساط، پورسانت، ارز و بارکد با Persistence واقعی"><section className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-7">{[["/app/inventory","کالاها و خدمات",productCount],["/app/customers","مشتریان",customers],["/app/suppliers","تأمین‌کنندگان",suppliers],["/app/sales","فروش",invoices],["/app/purchases","خرید",purchases],["/app/settlements","مانده‌های باز",openBalances],["/app/treasury","خزانه","فعال"]].map(([href,label,value])=><a key={String(href)} href={String(href)} className="rounded-2xl border border-slate-200 bg-white p-4"><div className="text-xs text-slate-500">{label}</div><div className="mt-2 text-lg font-black">{String(value)}</div></a>)}</section><section className="grid gap-5 xl:grid-cols-2">
+<article className="rounded-3xl border bg-white p-5"><h2 className="font-black">سطح قیمت</h2><form action={createPriceLevelAction} className="mt-4 grid gap-3 md:grid-cols-2"><input name="code" required placeholder="WHOLESALE" className={box}/><input name="name" required placeholder="عمده‌فروشی" className={box}/><input name="multiplierBasisPoints" type="number" defaultValue="10000" className={box}/><button className={btn}>ایجاد سطح قیمت</button></form><p className="mt-3 text-xs text-slate-500">{cfg.priceLevels.length} سطح ثبت شده</p></article>
+<article className="rounded-3xl border bg-white p-5"><h2 className="font-black">قاعده تخفیف</h2><form action={createDiscountRuleAction} className="mt-4 grid gap-3 md:grid-cols-2"><input name="code" required placeholder="VIP10" className={box}/><input name="name" required placeholder="مشتری ویژه" className={box}/><input name="percentageBasisPoints" type="number" defaultValue="0" className={box}/><input name="fixedAmount" type="number" defaultValue="0" className={box}/><input name="minimumPurchase" type="number" defaultValue="0" className={box}/><button className={btn}>ایجاد تخفیف</button></form><p className="mt-3 text-xs text-slate-500">{cfg.discountRules.length} قاعده ثبت شده</p></article>
+<article className="rounded-3xl border bg-white p-5"><h2 className="font-black">طرح اقساط</h2><form action={createInstallmentPlanAction} className="mt-4 grid gap-3 md:grid-cols-2"><input name="code" required placeholder="3M" className={box}/><input name="name" required placeholder="سه قسط" className={box}/><input name="installmentCount" type="number" defaultValue="3" className={box}/><input name="firstDueDays" type="number" defaultValue="0" className={box}/><input name="intervalDays" type="number" defaultValue="30" className={box}/><input name="markupBasisPoints" type="number" defaultValue="0" className={box}/><button className={btn}>ایجاد اقساط</button></form><p className="mt-3 text-xs text-slate-500">{cfg.installmentPlans.length} طرح ثبت شده</p></article>
+<article className="rounded-3xl border bg-white p-5"><h2 className="font-black">پورسانت</h2><form action={createCommissionRuleAction} className="mt-4 grid gap-3 md:grid-cols-2"><input name="code" required placeholder="SALE5" className={box}/><input name="name" required placeholder="پورسانت فروش" className={box}/><input name="rateBasisPoints" type="number" defaultValue="500" className={box}/><select name="basis" className={box}><option value="NET_AFTER_DISCOUNT">خالص پس از تخفیف</option><option value="GROSS">ناخالص</option></select><button className={btn}>ایجاد پورسانت</button></form><p className="mt-3 text-xs text-slate-500">{cfg.commissionRules.length} قاعده ثبت شده</p></article>
+<article className="rounded-3xl border bg-white p-5"><h2 className="font-black">نرخ ارز</h2><form action={createCurrencyRateAction} className="mt-4 grid gap-3 md:grid-cols-2"><input name="currency" required maxLength={3} placeholder="USD" className={box}/><input name="rateToIrr" type="number" required placeholder="نرخ به ریال" className={box}/><input name="effectiveAt" type="date" required className={box}/><button className={btn}>ثبت نرخ</button></form><p className="mt-3 text-xs text-slate-500">{cfg.currencyRates.length} نرخ ثبت شده</p></article>
+<article className="rounded-3xl border bg-white p-5"><h2 className="font-black">بارکد کالا</h2><form action={setBarcodeAction} className="mt-4 grid gap-3 md:grid-cols-2"><select name="itemId" required className={box}><option value="">انتخاب کالا</option>{items.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select><input name="barcode" placeholder="BARCODE-001" className={box}/><button className={btn}>ذخیره بارکد</button></form><p className="mt-3 text-xs text-slate-500">{items.filter(x=>x.barcode).length} قلم دارای بارکد</p></article>
+</section></WorkspaceShell>}
