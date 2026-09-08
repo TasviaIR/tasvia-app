@@ -6,7 +6,22 @@ import {
   previewCounterpartyImport,
 } from "./actions";
 
-const initialState = {
+type ImportActionState = {
+  ok: boolean;
+  message: string;
+  jobId?: string;
+  sourceContent?: string;
+  acceptedRows?: number;
+  rejectedRows?: number;
+  errors?: Array<{
+    row: number;
+    field?: string;
+    code: string;
+    message: string;
+  }>;
+};
+
+const initialState: ImportActionState = {
   ok: false,
   message: "",
 };
