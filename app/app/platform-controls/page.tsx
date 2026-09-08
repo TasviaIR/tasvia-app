@@ -17,6 +17,7 @@ export default async function PlatformControlsPage() {
     ["/developers", "مستندات توسعه‌دهندگان", "API V1", "قراردادهای اتصال و مسیرهای Read API"],
     ["/app/audit", "امنیت و Audit", `${auditEvents} رویداد`, "ردپای غیرقابل‌تغییر عملیات حساس"],
     ["/app/subscription", "اشتراک و Entitlement", "کنترل دسترسی", "Trial و قفل مرکزی عملیات مالی"],
+    ["/app/data-portability", "انتقال داده و بازیابی", "Import / Export", "Dry Run، CSV، Audit و Restore Evidence"],
     ["/app", "اعضای Workspace", `${members} عضو فعال`, "Workspace isolation و Role context"],
     ["/app/reconciliation", "اتصال بانکی امن", "Sandbox-first", "هیچ Provider عملیاتی بدون مجوز Production فعال نمی‌شود"],
   ] as const;
@@ -36,3 +37,4 @@ export default async function PlatformControlsPage() {
     </WorkspaceShell>
   );
 }
+
