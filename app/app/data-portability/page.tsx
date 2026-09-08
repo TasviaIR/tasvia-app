@@ -2,11 +2,12 @@ import { WorkspaceShell } from "../../../src/components/workspace/shell";
 import { requireCurrentWorkspace } from "../../../src/auth/current-workspace";
 import { prisma } from "../../../src/lib/prisma";
 import { CounterpartyImportForm } from "./counterparty-import-form";
+import { resolveWorkspaceRestoreReadiness } from "../../../src/production/workspace-restore-readiness";
 
 export default async function DataPortabilityPage() {
   const current = await requireCurrentWorkspace();
 
-  const [jobs, restoreEvidence] = await Promise.all([
+  const [jobs, restoreEvidence, restoreReadiness] = await Promise.all([
     prisma.dataImportJob.findMany({
       where: {
         workspaceId: current.workspace.id,
@@ -25,6 +26,7 @@ export default async function DataPortabilityPage() {
       },
       take: 5,
     }),
+    resolveWorkspaceRestoreReadiness(current.workspace.id),
   ]);
 
   return (
@@ -72,6 +74,18 @@ export default async function DataPortabilityPage() {
             <h2 className="text-base font-black text-[#0f223d]">
               وضعیت بازیابی
             </h2>
+
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-sm font-black text-[#0f223d]">
+                {restoreReadiness.hasPassingRestoreRehearsal
+                  ? "آمادگی بازیابی تأیید شده"
+                  : "آمادگی بازیابی هنوز تأیید نشده"}
+              </div>
+              <p className="mt-2 text-xs leading-6 text-slate-500">
+                برای عبور از Gate انتشار، حداقل یک Restore Rehearsal موفق
+                و ثبت‌شده برای همین Workspace لازم است.
+              </p>
+            </div>
 
             {restoreEvidence.length === 0 ? (
               <p className="mt-3 text-sm leading-7 text-amber-700">
