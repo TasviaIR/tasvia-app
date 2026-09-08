@@ -232,40 +232,45 @@ model LegacyRecoveryGrant {
 }
 
 model Workspace {
-  id                      String                          @id @default(uuid())
-  name                    String
-  slug                    String                          @unique
-  memberships             Membership[]
-  accountingAccounts      AccountingAccount[]
-  fiscalPeriods           FiscalPeriod[]
-  fiscalReopenAudits      FiscalReopenAudit[]
-  accountingJournals      AccountingJournal[]
-  counterparties          Counterparty[]
-  openBalances            OpenBalance[]
-  catalogItems            CatalogItem[]
-  warehouses              Warehouse[]
-  stockMovements          StockMovement[]
-  purchaseInvoices        PurchaseInvoice[]
-  salesInvoices           SalesInvoice[]
-  chequeRecords           ChequeRecord[]
-  bankEvidence            BankEvidence[]
-  employees               Employee[]
-  payrollRuns             PayrollRun[]
-  fixedAssets             FixedAsset[]
-  assetDepreciations      AssetDepreciation[]
-  subscription            WorkspaceSubscription?
-  apiKeys                 ApiKey[]
-  dimensionValues         AccountingDimensionValue[]
-  dimensionAssignments    AccountingDimensionAssignment[]
-  auditEvents             AuditEvent[]
-  financialEvidence       FinancialEvidence[]
-  commercialPriceLevels   CommercialPriceLevel[]
-  commercialDiscountRules CommercialDiscountRule[]
-  installmentPlans        InstallmentPlan[]
-  commissionRules         CommissionRule[]
-  currencyRates           CurrencyRate[]
-  createdAt               DateTime                        @default(now())
-  updatedAt               DateTime                        @updatedAt
+  id                       String                          @id @default(uuid())
+  name                     String
+  slug                     String                          @unique
+  memberships              Membership[]
+  accountingAccounts       AccountingAccount[]
+  fiscalPeriods            FiscalPeriod[]
+  fiscalReopenAudits       FiscalReopenAudit[]
+  accountingJournals       AccountingJournal[]
+  counterparties           Counterparty[]
+  openBalances             OpenBalance[]
+  catalogItems             CatalogItem[]
+  warehouses               Warehouse[]
+  stockMovements           StockMovement[]
+  purchaseInvoices         PurchaseInvoice[]
+  salesInvoices            SalesInvoice[]
+  chequeRecords            ChequeRecord[]
+  bankEvidence             BankEvidence[]
+  employees                Employee[]
+  payrollRuns              PayrollRun[]
+  fixedAssets              FixedAsset[]
+  assetDepreciations       AssetDepreciation[]
+  subscription             WorkspaceSubscription?
+  apiKeys                  ApiKey[]
+  dimensionValues          AccountingDimensionValue[]
+  dimensionAssignments     AccountingDimensionAssignment[]
+  auditEvents              AuditEvent[]
+  financialEvidence        FinancialEvidence[]
+  commercialPriceLevels    CommercialPriceLevel[]
+  commercialDiscountRules  CommercialDiscountRule[]
+  installmentPlans         InstallmentPlan[]
+  commissionRules          CommissionRule[]
+  currencyRates            CurrencyRate[]
+  manufacturingBoms        ManufacturingBom[]
+  manufacturingOrders      ManufacturingOrder[]
+  taxSubmissions           TaxSubmission[]
+  notificationTemplates    NotificationTemplate[]
+  operationalNotifications OperationalNotification[]
+  createdAt                DateTime                        @default(now())
+  updatedAt                DateTime                        @updatedAt
 }
 
 model Membership {
@@ -1064,4 +1069,127 @@ model CurrencyRate {
 
   @@unique([workspaceId, currency, effectiveAt])
   @@index([workspaceId, currency, active, effectiveAt])
+}
+
+model ManufacturingBom {
+  id             String                 @id @default(uuid())
+  workspaceId    String
+  workspace      Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  code           String
+  name           String
+  outputItemId   String
+  outputQuantity BigInt
+  active         Boolean                @default(true)
+  lines          ManufacturingBomLine[]
+  orders         ManufacturingOrder[]
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  @@unique([workspaceId, code])
+  @@index([workspaceId, active])
+  @@index([workspaceId, outputItemId])
+}
+
+model ManufacturingBomLine {
+  id                 String           @id @default(uuid())
+  bomId              String
+  bom                ManufacturingBom @relation(fields: [bomId], references: [id], onDelete: Cascade)
+  componentItemId    String
+  quantityMinorUnits BigInt
+  wasteBasisPoints   Int              @default(0)
+  createdAt          DateTime         @default(now())
+
+  @@index([bomId])
+  @@index([componentItemId])
+}
+
+model ManufacturingOrder {
+  id                    String           @id @default(uuid())
+  workspaceId           String
+  workspace             Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  bomId                 String
+  bom                   ManufacturingBom @relation(fields: [bomId], references: [id], onDelete: Restrict)
+  warehouseId           String
+  orderNumber           String
+  plannedOutputQuantity BigInt
+  actualOutputQuantity  BigInt?
+  materialCost          BigInt?
+  overheadCost          BigInt           @default(0)
+  laborCost             BigInt           @default(0)
+  status                String           @default("DRAFT")
+  startedAt             DateTime?
+  completedAt           DateTime?
+  createdBy             String
+  completedBy           String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  @@unique([workspaceId, orderNumber])
+  @@index([workspaceId, status, createdAt])
+}
+
+model TaxSubmission {
+  id                String    @id @default(uuid())
+  workspaceId       String
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  sourceType        String
+  sourceDocumentId  String
+  invoiceNumber     String
+  taxpayerId        String?
+  payloadHash       String
+  idempotencyKey    String
+  status            String    @default("QUEUED")
+  provider          String    @default("MODIAN")
+  providerReference String?
+  errorCode         String?
+  errorMessage      String?
+  submittedAt       DateTime?
+  acceptedAt        DateTime?
+  createdBy         String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([workspaceId, idempotencyKey])
+  @@index([workspaceId, status, createdAt])
+  @@index([workspaceId, sourceDocumentId])
+}
+
+model NotificationTemplate {
+  id          String    @id @default(uuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  code        String
+  name        String
+  channel     String
+  subject     String?
+  body        String
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([workspaceId, code])
+  @@index([workspaceId, channel, active])
+}
+
+model OperationalNotification {
+  id                String    @id @default(uuid())
+  workspaceId       String
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  templateId        String?
+  channel           String
+  recipient         String
+  subject           String?
+  body              String
+  scheduledAt       DateTime?
+  status            String    @default("QUEUED")
+  idempotencyKey    String
+  providerReference String?
+  errorMessage      String?
+  sentAt            DateTime?
+  createdBy         String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([workspaceId, idempotencyKey])
+  @@index([workspaceId, status, scheduledAt])
 }

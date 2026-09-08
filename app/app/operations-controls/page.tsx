@@ -23,6 +23,9 @@ export default async function OperationsControlsPage() {
     ["/app/fiscal-close", "سال و دوره مالی", `${periods} دوره`, "قفل، بستن، بازگشایی و کنترل دوره"],
     ["/app/audit", "ردپای حسابرسی", `${audits} رویداد`, "Actor، زمان، before/after و reason"],
     ["/app/reconciliation", "مغایرت‌گیری", "کنترل بانکی", "تطبیق شواهد بانکی با حقیقت خزانه"],
+    ["/app/manufacturing", "تولید و BOM", "بهای تمام‌شده", "فرمول ساخت، دستور تولید، مصرف مواد و محصول نهایی"],
+    ["/app/tax", "مالیات و مودیان", "صف صورتحساب", "هش، idempotency، وضعیت ارسال و مرجع پذیرش"],
+    ["/app/notifications", "اعلان و پیامک", "صف و قالب", "یادآوری سررسید و اتوماسیون امن"],
     ["/app/reports/financial", "گزارش‌های مالی", "دفتر و صورت مالی", "تراز، سود و زیان، ترازنامه و جریان نقد"],
   ] as const;
 
