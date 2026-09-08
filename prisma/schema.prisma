@@ -271,6 +271,8 @@ model Workspace {
   operationalNotifications OperationalNotification[]
   createdAt                DateTime                        @default(now())
   updatedAt                DateTime                        @updatedAt
+  DataImportJob            DataImportJob[]
+  RestoreRehearsalEvidence RestoreRehearsalEvidence[]
 }
 
 model Membership {
@@ -1192,4 +1194,44 @@ model OperationalNotification {
 
   @@unique([workspaceId, idempotencyKey])
   @@index([workspaceId, status, scheduledAt])
+}
+
+model DataImportJob {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  actorId      String
+  entityType   String
+  filename     String
+  sourceHash   String
+  mode         String
+  status       String
+  totalRows    Int
+  acceptedRows Int
+  rejectedRows Int
+  errorReport  Json?
+  committedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, status])
+}
+
+model RestoreRehearsalEvidence {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  actorId        String
+  backupChecksum String
+  schemaVersion  String
+  rowCountMatch  Boolean
+  checksumMatch  Boolean
+  schemaValid    Boolean
+  passed         Boolean
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
 }
