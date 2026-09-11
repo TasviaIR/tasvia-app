@@ -141,23 +141,51 @@ enum RecoveryChannel {
   EMAIL
 }
 
+enum OnboardingVerificationChannel {
+  EMAIL
+  PHONE
+}
+
+enum BusinessLanguage {
+  FA
+  EN
+}
+
+enum InventoryAccountingSystem {
+  PERIODIC
+  PERPETUAL
+}
+
+enum InventoryValuationMethod {
+  FIFO
+}
+
+enum BusinessCalendar {
+  SOLAR_HIJRI
+  GREGORIAN
+}
+
 model User {
-  id                 String                    @id @default(uuid())
-  name               String?
-  email              String?                   @unique
-  emailVerified      Boolean                   @default(false)
-  image              String?
-  phone              String?                   @unique
-  legacyPassword     String?                   @map("password")
-  role               Role                      @default(MERCHANT)
-  merchant           Merchant?
-  sessions           Session[]
-  accounts           Account[]
-  memberships        Membership[]
-  recoveryChallenges LegacyRecoveryChallenge[]
-  recoveryGrants     LegacyRecoveryGrant[]
-  createdAt          DateTime                  @default(now())
-  updatedAt          DateTime                  @updatedAt
+  id                               String                            @id @default(uuid())
+  name                             String?
+  email                            String?                           @unique
+  emailVerified                    Boolean                           @default(false)
+  image                            String?
+  phone                            String?                           @unique
+  phoneVerified                    Boolean                           @default(false)
+  phoneVerifiedAt                  DateTime?
+  legacyPassword                   String?                           @map("password")
+  role                             Role                              @default(MERCHANT)
+  merchant                         Merchant?
+  sessions                         Session[]
+  accounts                         Account[]
+  memberships                      Membership[]
+  onboardingDraft                  OnboardingDraft?
+  onboardingVerificationChallenges OnboardingVerificationChallenge[]
+  recoveryChallenges               LegacyRecoveryChallenge[]
+  recoveryGrants                   LegacyRecoveryGrant[]
+  createdAt                        DateTime                          @default(now())
+  updatedAt                        DateTime                          @updatedAt
 }
 
 model Session {
@@ -236,6 +264,9 @@ model Workspace {
   name                     String
   slug                     String                          @unique
   memberships              Membership[]
+  businessProfile          WorkspaceBusinessProfile?
+  accountingSettings       WorkspaceAccountingSettings?
+  setupCompletedAt         DateTime?
   accountingAccounts       AccountingAccount[]
   fiscalPeriods            FiscalPeriod[]
   fiscalReopenAudits       FiscalReopenAudit[]
@@ -1234,4 +1265,101 @@ model RestoreRehearsalEvidence {
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, createdAt])
+}
+
+model OnboardingDraft {
+  id                        String                     @id @default(uuid())
+  userId                    String                     @unique
+  user                      User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referralSource            String?
+  termsAcceptedAt           DateTime?
+  businessName              String?
+  defaultLanguage           BusinessLanguage           @default(FA)
+  legalName                 String?
+  businessType              String?
+  activityField             String?
+  nationalId                String?
+  economicCode              String?
+  registrationNumber        String?
+  country                   String?
+  province                  String?
+  city                      String?
+  postalCode                String?
+  businessPhone             String?
+  fax                       String?
+  address                   String?
+  website                   String?
+  businessEmail             String?
+  inventoryAccountingSystem InventoryAccountingSystem?
+  inventoryValuationMethod  InventoryValuationMethod   @default(FIFO)
+  manufacturingEnabled      Boolean                    @default(false)
+  inventoryEnabled          Boolean                    @default(true)
+  multiCurrencyEnabled      Boolean                    @default(false)
+  baseCurrency              String                     @default("IRR")
+  vatRateBasisPoints        Int                        @default(1000)
+  calendar                  BusinessCalendar           @default(SOLAR_HIJRI)
+  fiscalYearStartsAt        DateTime?
+  fiscalYearEndsAt          DateTime?
+  fiscalYearTitle           String?
+  step                      Int                        @default(1)
+  completedAt               DateTime?
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+}
+
+model OnboardingVerificationChallenge {
+  id         String                        @id @default(uuid())
+  userId     String
+  user       User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel    OnboardingVerificationChannel
+  codeHash   String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  attempts   Int                           @default(0)
+  createdAt  DateTime                      @default(now())
+
+  @@index([userId, channel, expiresAt])
+}
+
+model WorkspaceBusinessProfile {
+  id                 String           @id @default(uuid())
+  workspaceId        String           @unique
+  workspace          Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  legalName          String
+  defaultLanguage    BusinessLanguage @default(FA)
+  businessType       String
+  activityField      String?
+  nationalId         String?
+  economicCode       String?
+  registrationNumber String?
+  country            String?
+  province           String?
+  city               String?
+  postalCode         String?
+  phone              String?
+  fax                String?
+  address            String?
+  website            String?
+  email              String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+}
+
+model WorkspaceAccountingSettings {
+  id                        String                    @id @default(uuid())
+  workspaceId               String                    @unique
+  workspace                 Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  inventoryAccountingSystem InventoryAccountingSystem
+  inventoryValuationMethod  InventoryValuationMethod  @default(FIFO)
+  manufacturingEnabled      Boolean                   @default(false)
+  inventoryEnabled          Boolean                   @default(true)
+  multiCurrencyEnabled      Boolean                   @default(false)
+  baseCurrency              String                    @default("IRR")
+  vatRateBasisPoints        Int                       @default(1000)
+  calendar                  BusinessCalendar          @default(SOLAR_HIJRI)
+  fiscalYearStartsAt        DateTime
+  fiscalYearEndsAt          DateTime
+  fiscalYearTitle           String
+  createdAt                 DateTime                  @default(now())
+  updatedAt                 DateTime                  @updatedAt
 }
