@@ -41,25 +41,21 @@ export default async function WorkspaceLayout({
 
   if (gate.state === "MEMBERSHIP_REQUIRED") {
     return (
-      <main className="min-h-screen bg-[#f3f6fa] px-4 py-12 text-[#0b1220] sm:px-6">
-        <div className="mx-auto max-w-xl rounded-[32px] border border-black/5 bg-white p-7 shadow-sm sm:p-9">
-          <div className="text-xs font-black text-[#008f87]">کنترل دسترسی تسوین</div>
-          <h1 className="mt-3 text-3xl font-black">محیط کاری فعالی برای این حساب پیدا نشد.</h1>
-          <p className="mt-4 text-sm leading-7 text-[#657184]">
-            ورود موفق بوده است، اما دسترسی مالی فقط با عضویت فعال در یک Workspace مجاز می‌شود.
-            احراز هویت به‌تنهایی مجوز مشاهده اطلاعات کسب‌وکار نیست.
-          </p>
-          <div className="mt-6 rounded-2xl bg-[#fff8e5] p-4 text-xs leading-6 text-[#715a12]">
-            هیچ Workspace آزمایشی به‌صورت خودکار به حساب شما نسبت داده نمی‌شود.
+      <main dir="rtl" className="min-h-screen bg-[#f3f6fa] px-4 py-12 text-[#0b1220] sm:px-6">
+        <div className="mx-auto max-w-3xl rounded-[32px] border border-black/5 bg-white p-7 shadow-sm sm:p-9">
+          <div className="text-xs font-black text-[#008f87]">خانه تسوین</div>
+          <h1 className="mt-3 text-3xl font-black">هنوز کسب‌وکاری در تسوین راه‌اندازی نکرده‌اید.</h1>
+          <p className="mt-4 text-sm leading-7 text-[#657184]">برای شروع ۱۵ روز رایگان، کسب‌وکار خود را بسازید و تنظیمات اولیه حسابداری، انبار، مالیات و سال مالی را تکمیل کنید.</p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl bg-[#f7f9fc] p-4 text-xs leading-6"><strong className="block">۱۵ روز رایگان</strong>Trial بعد از تکمیل راه‌اندازی شروع می‌شود.</div>
+            <div className="rounded-2xl bg-[#f7f9fc] p-4 text-xs leading-6"><strong className="block">۳ مرحله کوتاه</strong>کسب‌وکار، اطلاعات و حسابداری.</div>
+            <div className="rounded-2xl bg-[#f7f9fc] p-4 text-xs leading-6"><strong className="block">قابل ادامه</strong>اطلاعات هر مرحله ذخیره می‌شود.</div>
           </div>
-          <Link href="/contact" className="mt-6 inline-flex rounded-2xl bg-[#0f223d] px-5 py-3 text-sm font-black text-white">
-            درخواست دسترسی پایلوت
-          </Link>
+          <Link href="/onboarding" className="mt-7 inline-flex min-h-12 items-center rounded-2xl bg-[#0f223d] px-6 py-3 text-sm font-black text-white">راه‌اندازی کسب‌وکار جدید</Link>
         </div>
       </main>
     );
   }
-
   if (gate.state !== "ALLOWED") {
     redirect("/sign-in?next=/app");
   }
