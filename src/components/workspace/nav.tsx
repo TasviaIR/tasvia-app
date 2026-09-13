@@ -2,10 +2,12 @@ import Link from "next/link";
 
 const items = [
   ["/app", "نمای کلی"],
+  ["/app/accounting", "حسابداری"],
   ["/app/sales", "فروش"],
   ["/app/purchases", "خرید"],
   ["/app/treasury", "خزانه"],
   ["/app/inventory", "انبار"],
+  ["/app/dimensions", "شعب و ابعاد مالی"],
   ["/app/suppliers", "تأمین‌کنندگان"],
   ["/app/settlements", "تسویه‌ها"],
   ["/app/reconciliation", "مغایرت‌گیری"],
@@ -14,6 +16,8 @@ const items = [
   ["/app/platform-controls", "انطباق و اتصال"],
   ["/app/alerts", "هشدارها"],
   ["/app/reports/financial", "گزارش‌های مالی"],
+  ["/app/audit", "ردپای حسابرسی"],
+  ["/app/evidence", "مستندات مالی"],
   ["/accounting/simple", "ثبت ساده"],
   ["/accounting/professional", "حسابداری حرفه‌ای"],
 ] as const;

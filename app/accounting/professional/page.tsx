@@ -8,15 +8,15 @@ export const metadata: Metadata = {
 };
 
 const modules = [
-  ["اسناد حسابداری", "پیش‌نویس، ثبت قطعی، برگشت و سابقه حسابرسی"],
-  ["دفتر روزنامه", "مرور زمانی ثبت‌ها و منبع هر رویداد مالی"],
-  ["دفتر کل و معین", "گردش و مانده حساب‌ها با Drill-down"],
-  ["تراز آزمایشی", "کنترل بدهکار و بستانکار و مانده حساب‌ها"],
-  ["سود و زیان", "درآمد، هزینه و نتیجه عملکرد دوره"],
-  ["ترازنامه", "دارایی، بدهی و حقوق مالکانه"],
-  ["جریان نقد", "ورودی و خروجی نقد و وضعیت نقدینگی"],
-  ["مراکز هزینه", "تحلیل شعبه، پروژه و ابعاد مدیریتی"],
-];
+  ["/app/accounting/journals", "اسناد حسابداری", "پیش‌نویس، ثبت قطعی، برگشت و سابقه حسابرسی"],
+  ["/app/accounting/journals", "دفتر روزنامه", "مرور زمانی ثبت‌ها و منبع هر رویداد مالی"],
+  ["/app/accounting/ledger", "دفتر کل و معین", "گردش و مانده حساب‌ها با Drill-down"],
+  ["/app/reports/financial", "تراز آزمایشی", "کنترل بدهکار و بستانکار و مانده حساب‌ها"],
+  ["/app/reports/financial", "سود و زیان", "درآمد، هزینه و نتیجه عملکرد دوره"],
+  ["/app/reports/financial", "ترازنامه", "دارایی، بدهی و حقوق مالکانه"],
+  ["/app/reports/financial", "جریان نقد", "ورودی و خروجی نقد و وضعیت نقدینگی"],
+  ["/app/dimensions", "مراکز هزینه", "تحلیل شعبه، پروژه و ابعاد مدیریتی"],
+] as const;
 
 export default function ProfessionalAccountingPage() {
   return (
@@ -33,13 +33,22 @@ export default function ProfessionalAccountingPage() {
           </div>
         </div>
 
+        <div className="mt-6 flex justify-end">
+          <Link
+            href="/app/dimensions/assignments"
+            className="rounded-2xl border border-[#008f87]/20 bg-[#f1fbfa] px-5 py-3 text-sm font-black text-[#00776f]"
+          >
+            تخصیص شعبه، مرکز هزینه و پروژه به اسناد ←
+          </Link>
+        </div>
+
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {modules.map(([title, description]) => (
-            <article key={title} className="rounded-[26px] border border-black/5 bg-white p-5">
+          {modules.map(([href, title, description]) => (
+            <Link key={`${href}:${title}`} href={href} className="rounded-[26px] border border-black/5 bg-white p-5 transition hover:-translate-y-0.5 hover:border-[#008f87]/30 hover:shadow-sm">
               <h2 className="font-black">{title}</h2>
               <p className="mt-3 text-sm leading-7 text-[#657184]">{description}</p>
               <div className="mt-5 text-xs font-black text-[#008f87]">ورود به ماژول ←</div>
-            </article>
+            </Link>
           ))}
         </div>
 

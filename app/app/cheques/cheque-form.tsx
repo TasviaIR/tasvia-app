@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { createChequeAction, type ChequeActionState } from "./actions";
+import { JalaliDateInput } from "../../../src/components/date/jalali-date-input";
 
 const initial: ChequeActionState = { ok: false, message: "" };
 
@@ -75,12 +76,12 @@ export function ChequeForm({
 
       <label className="text-xs font-black">
         تاریخ صدور
-        <input name="issuedAt" type="date" required className={cls} />
+        <JalaliDateInput name="issuedAt" required className={cls} />
       </label>
 
       <label className="text-xs font-black">
         سررسید
-        <input name="dueAt" type="date" required className={cls} />
+        <JalaliDateInput name="dueAt" required className={cls} />
       </label>
 
       <label className="text-xs font-black sm:col-span-2 xl:col-span-4">

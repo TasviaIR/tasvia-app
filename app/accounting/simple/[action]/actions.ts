@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { auth, authConfigured } from "../../../../src/lib/auth";
 import { resolveFirstActiveWorkspaceMembership } from "../../../../src/domain/workspace/repository";
 import { executeSimpleWorkflow, type SimplePersistedAction } from "../../../../src/application/accounting/simple-workflow-persistence";
+import { parseJalaliDate } from "../../../../src/lib/tasvin-date";
 
 export type SimpleActionState = {
   ok: boolean;
@@ -32,9 +33,11 @@ function parsePositiveRials(value: FormDataEntryValue | null): bigint {
 
 function parseDate(value: FormDataEntryValue | null, fallback = new Date()): Date {
   if (!value) return fallback;
-  const result = new Date(String(value));
-  if (Number.isNaN(result.getTime())) throw new Error("تاریخ معتبر نیست.");
-  return result;
+  try {
+    return parseJalaliDate(String(value));
+  } catch {
+    throw new Error("تاریخ شمسی معتبر نیست.");
+  }
 }
 
 function messageForError(error: unknown): string {

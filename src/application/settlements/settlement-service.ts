@@ -1,6 +1,9 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
 import { assertFinancialWriteEnvironment } from "../accounting/simple-workflow-persistence";
 import { nextSettlementStatus } from "../../domain/settlements/settlement";
+import { assertWorkspaceWriteEntitlement } from "../subscription/workspace-entitlement";
+import { recordAuditEventInTransaction } from "../audit/audit-service";
 
 const ACCOUNT_CODES = {
   cash: "1101",
@@ -59,7 +62,7 @@ export async function listSettlementOptions(workspaceId: string) {
   };
 }
 
-export async function executeSettlement(input: {
+export type SettlementInput = {
   workspaceId: string;
   actorId: string;
   direction: SettlementDirection;
@@ -69,14 +72,15 @@ export async function executeSettlement(input: {
   occurredAt: Date;
   idempotencyKey: string;
   description?: string;
-}) {
-  assertFinancialWriteEnvironment();
+};
 
+export async function executeSettlementInTransaction(
+  tx: Prisma.TransactionClient,
+  input: SettlementInput,
+) {
   if (!input.idempotencyKey.trim()) {
     throw new Error("IDEMPOTENCY_KEY_REQUIRED");
   }
-
-  return prisma.$transaction(async (tx) => {
     const existingJournal = await tx.accountingJournal.findFirst({
       where: {
         workspaceId: input.workspaceId,
@@ -150,13 +154,23 @@ export async function executeSettlement(input: {
       }
     }
 
-    await tx.openBalance.update({
-      where: { id: balance.id },
+    const balanceMutation = await tx.openBalance.updateMany({
+      where: {
+        id: balance.id,
+        workspaceId: input.workspaceId,
+        type: expectedType,
+        status: balance.status,
+        outstandingAmount: balance.outstandingAmount,
+      },
       data: {
         outstandingAmount: next.outstandingAfter,
         status: next.status,
       },
     });
+
+    if (balanceMutation.count !== 1) {
+      throw new Error("OPEN_BALANCE_CONCURRENTLY_MODIFIED");
+    }
 
     const description =
       input.description?.trim() ||
@@ -242,11 +256,41 @@ export async function executeSettlement(input: {
       }
     }
 
+    await recordAuditEventInTransaction(tx, {
+      workspaceId: input.workspaceId,
+      actorId: input.actorId,
+      action: input.direction === "RECEIPT" ? "SETTLEMENT_RECEIPT_POSTED" : "SETTLEMENT_PAYMENT_POSTED",
+      category: "SETTLEMENT",
+      severity: "INFO",
+      entityType: "OpenBalance",
+      entityId: balance.id,
+      requestId: input.idempotencyKey,
+      before: {
+        status: balance.status,
+        outstandingAmount: balance.outstandingAmount,
+      },
+      after: {
+        status: next.status,
+        outstandingAmount: next.outstandingAfter,
+      },
+      metadata: {
+        journalId: journal.id,
+        amountRials: input.amountRials,
+        treasuryAccountCode: input.treasuryAccountCode,
+        sourceDocumentId: balance.sourceDocumentId,
+      },
+    });
+
     return {
       journal,
       idempotentReplay: false,
       outstandingAfter: next.outstandingAfter,
       status: next.status,
     };
-  });
+}
+
+export async function executeSettlement(input: SettlementInput) {
+  assertFinancialWriteEnvironment();
+  await assertWorkspaceWriteEntitlement(input.workspaceId);
+  return prisma.$transaction((tx) => executeSettlementInTransaction(tx, input));
 }

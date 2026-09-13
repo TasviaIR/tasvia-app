@@ -58,6 +58,12 @@ enum AccountingJournalStatus {
   REVERSED
 }
 
+enum AccountingDimensionType {
+  BRANCH
+  COST_CENTER
+  PROJECT
+}
+
 enum CounterpartyType {
   CUSTOMER
   SUPPLIER
@@ -135,23 +141,51 @@ enum RecoveryChannel {
   EMAIL
 }
 
+enum OnboardingVerificationChannel {
+  EMAIL
+  PHONE
+}
+
+enum BusinessLanguage {
+  FA
+  EN
+}
+
+enum InventoryAccountingSystem {
+  PERIODIC
+  PERPETUAL
+}
+
+enum InventoryValuationMethod {
+  FIFO
+}
+
+enum BusinessCalendar {
+  SOLAR_HIJRI
+  GREGORIAN
+}
+
 model User {
-  id                 String                    @id @default(uuid())
-  name               String?
-  email              String?                   @unique
-  emailVerified      Boolean                   @default(false)
-  image              String?
-  phone              String?                   @unique
-  legacyPassword     String?                   @map("password")
-  role               Role                      @default(MERCHANT)
-  merchant           Merchant?
-  sessions           Session[]
-  accounts           Account[]
-  memberships        Membership[]
-  recoveryChallenges LegacyRecoveryChallenge[]
-  recoveryGrants     LegacyRecoveryGrant[]
-  createdAt          DateTime                   @default(now())
-  updatedAt          DateTime                   @updatedAt
+  id                               String                            @id @default(uuid())
+  name                             String?
+  email                            String?                           @unique
+  emailVerified                    Boolean                           @default(false)
+  image                            String?
+  phone                            String?                           @unique
+  phoneVerified                    Boolean                           @default(false)
+  phoneVerifiedAt                  DateTime?
+  legacyPassword                   String?                           @map("password")
+  role                             Role                              @default(MERCHANT)
+  merchant                         Merchant?
+  sessions                         Session[]
+  accounts                         Account[]
+  memberships                      Membership[]
+  onboardingDraft                  OnboardingDraft?
+  onboardingVerificationChallenges OnboardingVerificationChallenge[]
+  recoveryChallenges               LegacyRecoveryChallenge[]
+  recoveryGrants                   LegacyRecoveryGrant[]
+  createdAt                        DateTime                          @default(now())
+  updatedAt                        DateTime                          @updatedAt
 }
 
 model Session {
@@ -169,12 +203,12 @@ model Session {
 }
 
 model Account {
-  id                    String   @id @default(uuid())
+  id                    String    @id @default(uuid())
   issuer                String
   accountId             String
   providerId            String
   userId                String
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -182,11 +216,11 @@ model Account {
   refreshTokenExpiresAt DateTime?
   scope                 String?
   password              String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  @@index([userId])
   @@unique([issuer, accountId])
+  @@index([userId])
 }
 
 model Verification {
@@ -226,24 +260,50 @@ model LegacyRecoveryGrant {
 }
 
 model Workspace {
-  id                 String              @id @default(uuid())
-  name               String
-  slug               String              @unique
-  memberships        Membership[]
-  accountingAccounts AccountingAccount[]
-  fiscalPeriods      FiscalPeriod[]
-  accountingJournals AccountingJournal[]
-  counterparties     Counterparty[]
-  openBalances       OpenBalance[]
-  catalogItems       CatalogItem[]
-  warehouses         Warehouse[]
-  stockMovements     StockMovement[]
-  purchaseInvoices   PurchaseInvoice[]
-  salesInvoices      SalesInvoice[]
-  chequeRecords      ChequeRecord[]
-  bankEvidence       BankEvidence[]
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  id                       String                          @id @default(uuid())
+  name                     String
+  slug                     String                          @unique
+  memberships              Membership[]
+  businessProfile          WorkspaceBusinessProfile?
+  accountingSettings       WorkspaceAccountingSettings?
+  setupCompletedAt         DateTime?
+  accountingAccounts       AccountingAccount[]
+  fiscalPeriods            FiscalPeriod[]
+  fiscalReopenAudits       FiscalReopenAudit[]
+  accountingJournals       AccountingJournal[]
+  counterparties           Counterparty[]
+  openBalances             OpenBalance[]
+  catalogItems             CatalogItem[]
+  warehouses               Warehouse[]
+  stockMovements           StockMovement[]
+  purchaseInvoices         PurchaseInvoice[]
+  salesInvoices            SalesInvoice[]
+  chequeRecords            ChequeRecord[]
+  bankEvidence             BankEvidence[]
+  employees                Employee[]
+  payrollRuns              PayrollRun[]
+  fixedAssets              FixedAsset[]
+  assetDepreciations       AssetDepreciation[]
+  subscription             WorkspaceSubscription?
+  apiKeys                  ApiKey[]
+  dimensionValues          AccountingDimensionValue[]
+  dimensionAssignments     AccountingDimensionAssignment[]
+  auditEvents              AuditEvent[]
+  financialEvidence        FinancialEvidence[]
+  commercialPriceLevels    CommercialPriceLevel[]
+  commercialDiscountRules  CommercialDiscountRule[]
+  installmentPlans         InstallmentPlan[]
+  commissionRules          CommissionRule[]
+  currencyRates            CurrencyRate[]
+  manufacturingBoms        ManufacturingBom[]
+  manufacturingOrders      ManufacturingOrder[]
+  taxSubmissions           TaxSubmission[]
+  notificationTemplates    NotificationTemplate[]
+  operationalNotifications OperationalNotification[]
+  createdAt                DateTime                        @default(now())
+  updatedAt                DateTime                        @updatedAt
+  DataImportJob            DataImportJob[]
+  RestoreRehearsalEvidence RestoreRehearsalEvidence[]
 }
 
 model Membership {
@@ -291,22 +351,22 @@ model Transaction {
 }
 
 model Counterparty {
-  id            String           @id @default(uuid())
-  workspaceId   String
-  workspace     Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  type          CounterpartyType
-  name          String
-  nationalId    String?
-  economicCode  String?
-  phone         String?
-  email         String?
-  active        Boolean          @default(true)
-  openBalances      OpenBalance[]
-  purchaseInvoices  PurchaseInvoice[]
-  salesInvoices     SalesInvoice[]
-  chequeRecords     ChequeRecord[]
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id               String            @id @default(uuid())
+  workspaceId      String
+  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  type             CounterpartyType
+  name             String
+  nationalId       String?
+  economicCode     String?
+  phone            String?
+  email            String?
+  active           Boolean           @default(true)
+  openBalances     OpenBalance[]
+  purchaseInvoices PurchaseInvoice[]
+  salesInvoices    SalesInvoice[]
+  chequeRecords    ChequeRecord[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   @@index([workspaceId, type, active])
   @@index([workspaceId, name])
@@ -355,20 +415,38 @@ model AccountingAccount {
 }
 
 model FiscalPeriod {
-  id          String             @id @default(uuid())
-  workspaceId String
-  workspace   Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  name        String
-  startsAt    DateTime
-  endsAt      DateTime
-  status      FiscalPeriodStatus @default(OPEN)
-  journals    AccountingJournal[]
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  id           String              @id @default(uuid())
+  workspaceId  String
+  workspace    Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name         String
+  startsAt     DateTime
+  endsAt       DateTime
+  status       FiscalPeriodStatus  @default(OPEN)
+  journals     AccountingJournal[]
+  reopenAudits FiscalReopenAudit[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 
   @@unique([workspaceId, name])
   @@index([workspaceId, startsAt, endsAt])
   @@index([workspaceId, status])
+}
+
+model FiscalReopenAudit {
+  id             String             @id @default(uuid())
+  workspaceId    String
+  workspace      Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  fiscalPeriodId String
+  fiscalPeriod   FiscalPeriod       @relation(fields: [fiscalPeriodId], references: [id], onDelete: Cascade)
+  actorId        String
+  reason         String
+  beforeStatus   FiscalPeriodStatus
+  afterStatus    FiscalPeriodStatus
+  occurredAt     DateTime
+  createdAt      DateTime           @default(now())
+
+  @@index([workspaceId, fiscalPeriodId, occurredAt])
+  @@index([workspaceId, actorId, occurredAt])
 }
 
 model AccountingJournal {
@@ -401,37 +479,38 @@ model AccountingJournal {
 }
 
 model AccountingJournalLine {
-  id          String            @id @default(uuid())
-  journalId   String
-  journal     AccountingJournal @relation(fields: [journalId], references: [id], onDelete: Cascade)
-  accountId   String
-  account     AccountingAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
-  debit       BigInt            @default(0)
-  credit      BigInt            @default(0)
-  description String?
-  createdAt   DateTime          @default(now())
+  id                   String                          @id @default(uuid())
+  journalId            String
+  journal              AccountingJournal               @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  accountId            String
+  account              AccountingAccount               @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  debit                BigInt                          @default(0)
+  credit               BigInt                          @default(0)
+  description          String?
+  dimensionAssignments AccountingDimensionAssignment[]
+  createdAt            DateTime                        @default(now())
 
   @@index([journalId])
   @@index([accountId])
 }
 
 model CatalogItem {
-  id                   String          @id @default(uuid())
-  workspaceId          String
-  workspace            Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  type                 CatalogItemType
-  name                 String
-  sku                  String?
-  barcode              String?
-  unit                 String
-  taxRateBasisPoints   Int?
-  lowStockThreshold    BigInt?
-  active               Boolean         @default(true)
-  movements            StockMovement[]
-  purchaseLines        PurchaseInvoiceLine[]
-  salesLines           SalesInvoiceLine[]
-  createdAt            DateTime        @default(now())
-  updatedAt            DateTime        @updatedAt
+  id                 String                @id @default(uuid())
+  workspaceId        String
+  workspace          Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  type               CatalogItemType
+  name               String
+  sku                String?
+  barcode            String?
+  unit               String
+  taxRateBasisPoints Int?
+  lowStockThreshold  BigInt?
+  active             Boolean               @default(true)
+  movements          StockMovement[]
+  purchaseLines      PurchaseInvoiceLine[]
+  salesLines         SalesInvoiceLine[]
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
 
   @@unique([workspaceId, sku])
   @@index([workspaceId, type, active])
@@ -439,17 +518,17 @@ model CatalogItem {
 }
 
 model Warehouse {
-  id          String          @id @default(uuid())
-  workspaceId String
-  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  name        String
-  code        String
-  active      Boolean         @default(true)
+  id               String            @id @default(uuid())
+  workspaceId      String
+  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name             String
+  code             String
+  active           Boolean           @default(true)
   movements        StockMovement[]
   purchaseInvoices PurchaseInvoice[]
   salesInvoices    SalesInvoice[]
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   @@unique([workspaceId, code])
   @@index([workspaceId, active])
@@ -477,37 +556,37 @@ model StockMovement {
 }
 
 model PurchaseInvoice {
-  id               String          @id @default(uuid())
-  workspaceId      String
-  workspace        Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  supplierId       String
-  supplier         Counterparty    @relation(fields: [supplierId], references: [id], onDelete: Restrict)
-  warehouseId      String
-  warehouse        Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
-  invoiceNumber    String
-  status           PurchaseStatus  @default(DRAFT)
-  issuedAt         DateTime
-  dueAt            DateTime
-  subtotal         BigInt
-  discount         BigInt          @default(0)
-  tax              BigInt          @default(0)
-  total            BigInt
-  currency         String          @default("IRR")
-  createdBy        String
-  submittedAt      DateTime?
-  submittedBy      String?
-  approvedAt       DateTime?
-  approvedBy       String?
-  postedAt         DateTime?
-  postedBy         String?
-  cancelledAt      DateTime?
-  cancelledBy      String?
-  postedJournalId  String?
-  payableId        String?
-  lines            PurchaseInvoiceLine[]
-  statusHistory    PurchaseStatusHistory[]
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  id              String                  @id @default(uuid())
+  workspaceId     String
+  workspace       Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  supplierId      String
+  supplier        Counterparty            @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  warehouseId     String
+  warehouse       Warehouse               @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  invoiceNumber   String
+  status          PurchaseStatus          @default(DRAFT)
+  issuedAt        DateTime
+  dueAt           DateTime
+  subtotal        BigInt
+  discount        BigInt                  @default(0)
+  tax             BigInt                  @default(0)
+  total           BigInt
+  currency        String                  @default("IRR")
+  createdBy       String
+  submittedAt     DateTime?
+  submittedBy     String?
+  approvedAt      DateTime?
+  approvedBy      String?
+  postedAt        DateTime?
+  postedBy        String?
+  cancelledAt     DateTime?
+  cancelledBy     String?
+  postedJournalId String?
+  payableId       String?
+  lines           PurchaseInvoiceLine[]
+  statusHistory   PurchaseStatusHistory[]
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
 
   @@unique([workspaceId, invoiceNumber])
   @@index([workspaceId, status, issuedAt])
@@ -522,11 +601,11 @@ model PurchaseInvoiceLine {
   itemId             String
   item               CatalogItem     @relation(fields: [itemId], references: [id], onDelete: Restrict)
   quantityMinorUnits BigInt
-  unitPrice           BigInt
-  discount            BigInt         @default(0)
-  tax                 BigInt         @default(0)
-  lineTotal           BigInt
-  createdAt           DateTime       @default(now())
+  unitPrice          BigInt
+  discount           BigInt          @default(0)
+  tax                BigInt          @default(0)
+  lineTotal          BigInt
+  createdAt          DateTime        @default(now())
 
   @@index([purchaseInvoiceId])
   @@index([itemId])
@@ -546,23 +625,23 @@ model PurchaseStatusHistory {
 }
 
 model SalesInvoice {
-  id              String        @id @default(uuid())
+  id              String               @id @default(uuid())
   workspaceId     String
-  workspace       Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace       Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   customerId      String
-  customer        Counterparty  @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  customer        Counterparty         @relation(fields: [customerId], references: [id], onDelete: Restrict)
   warehouseId     String
-  warehouse       Warehouse     @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  warehouse       Warehouse            @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
   invoiceNumber   String
-  status          SalesStatus   @default(DRAFT)
+  status          SalesStatus          @default(DRAFT)
   issuedAt        DateTime
   dueAt           DateTime
   subtotal        BigInt
-  discount        BigInt        @default(0)
-  tax             BigInt        @default(0)
+  discount        BigInt               @default(0)
+  tax             BigInt               @default(0)
   total           BigInt
-  cogsTotal       BigInt        @default(0)
-  currency        String        @default("IRR")
+  cogsTotal       BigInt               @default(0)
+  currency        String               @default("IRR")
   createdBy       String
   submittedAt     DateTime?
   submittedBy     String?
@@ -577,8 +656,8 @@ model SalesInvoice {
   receivableId    String?
   lines           SalesInvoiceLine[]
   statusHistory   SalesStatusHistory[]
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 
   @@unique([workspaceId, invoiceNumber])
   @@index([workspaceId, status, issuedAt])
@@ -593,11 +672,11 @@ model SalesInvoiceLine {
   itemId             String
   item               CatalogItem  @relation(fields: [itemId], references: [id], onDelete: Restrict)
   quantityMinorUnits BigInt
-  unitPrice           BigInt
-  discount            BigInt      @default(0)
-  tax                 BigInt      @default(0)
-  lineTotal           BigInt
-  createdAt           DateTime     @default(now())
+  unitPrice          BigInt
+  discount           BigInt       @default(0)
+  tax                BigInt       @default(0)
+  lineTotal          BigInt
+  createdAt          DateTime     @default(now())
 
   @@index([salesInvoiceId])
   @@index([itemId])
@@ -617,29 +696,29 @@ model SalesStatusHistory {
 }
 
 model ChequeRecord {
-  id               String                @id @default(uuid())
-  workspaceId      String
-  workspace        Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  counterpartyId   String
-  counterparty     Counterparty          @relation(fields: [counterpartyId], references: [id], onDelete: Restrict)
-  direction        ChequeRecordDirection
-  chequeNumber     String
-  sayadId          String?
-  bankName         String?
-  accountReference String?
-  amount           BigInt
-  currency         String                @default("IRR")
-  issuedAt         DateTime
-  dueAt            DateTime
-  status           ChequeRecordStatus    @default(REGISTERED)
-  openBalanceId    String?
+  id                  String                @id @default(uuid())
+  workspaceId         String
+  workspace           Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  counterpartyId      String
+  counterparty        Counterparty          @relation(fields: [counterpartyId], references: [id], onDelete: Restrict)
+  direction           ChequeRecordDirection
+  chequeNumber        String
+  sayadId             String?
+  bankName            String?
+  accountReference    String?
+  amount              BigInt
+  currency            String                @default("IRR")
+  issuedAt            DateTime
+  dueAt               DateTime
+  status              ChequeRecordStatus    @default(REGISTERED)
+  openBalanceId       String?
   treasuryAccountCode String?
-  clearedJournalId String?
-  createdBy        String
-  statusChangedBy  String?
-  statusChangedAt  DateTime?
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
+  clearedJournalId    String?
+  createdBy           String
+  statusChangedBy     String?
+  statusChangedAt     DateTime?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
 
   @@unique([workspaceId, chequeNumber])
   @@index([workspaceId, status, dueAt])
@@ -648,25 +727,639 @@ model ChequeRecord {
 }
 
 model BankEvidence {
-  id              String                     @id @default(uuid())
-  workspaceId     String
-  workspace       Workspace                  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  accountCode     String
-  externalRef     String
-  amount          BigInt
-  direction       String
-  occurredAt      DateTime
-  description     String?
-  status          ReconciliationRecordStatus @default(PENDING)
+  id               String                     @id @default(uuid())
+  workspaceId      String
+  workspace        Workspace                  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  accountCode      String
+  externalRef      String
+  amount           BigInt
+  direction        String
+  occurredAt       DateTime
+  description      String?
+  status           ReconciliationRecordStatus @default(PENDING)
   matchedJournalId String?
-  confidenceScore Int?
-  decidedBy       String?
-  decidedAt       DateTime?
-  createdBy       String
-  createdAt       DateTime                   @default(now())
-  updatedAt       DateTime                   @updatedAt
+  confidenceScore  Int?
+  decidedBy        String?
+  decidedAt        DateTime?
+  createdBy        String
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
 
   @@unique([workspaceId, accountCode, externalRef])
   @@index([workspaceId, status, occurredAt])
   @@index([matchedJournalId])
+}
+
+enum PayrollRunStatus {
+  DRAFT
+  FINALIZED
+  PAID
+}
+
+enum FixedAssetStatus {
+  ACTIVE
+  DISPOSED
+}
+
+model Employee {
+  id           String        @id @default(uuid())
+  workspaceId  String
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  employeeCode String
+  name         String
+  nationalId   String?
+  mobile       String?
+  baseSalary   BigInt        @default(0)
+  active       Boolean       @default(true)
+  payrollLines PayrollLine[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([workspaceId, employeeCode])
+  @@index([workspaceId, active, name])
+}
+
+model PayrollRun {
+  id          String           @id @default(uuid())
+  workspaceId String
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  title       String
+  periodStart DateTime
+  periodEnd   DateTime
+  status      PayrollRunStatus @default(DRAFT)
+  lines       PayrollLine[]
+  finalizedAt DateTime?
+  paidAt      DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([workspaceId, periodStart, periodEnd])
+  @@index([workspaceId, status])
+}
+
+model PayrollLine {
+  id           String     @id @default(uuid())
+  payrollRunId String
+  payrollRun   PayrollRun @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+  employeeId   String
+  employee     Employee   @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  grossPay     BigInt
+  deductions   BigInt     @default(0)
+  netPay       BigInt
+  note         String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([payrollRunId, employeeId])
+  @@index([employeeId])
+}
+
+model FixedAsset {
+  id                  String              @id @default(uuid())
+  workspaceId         String
+  workspace           Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  code                String
+  name                String
+  acquisitionDate     DateTime
+  acquisitionCost     BigInt
+  residualValue       BigInt              @default(0)
+  usefulLifeMonths    Int
+  status              FixedAssetStatus    @default(ACTIVE)
+  depreciationEntries AssetDepreciation[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@unique([workspaceId, code])
+  @@index([workspaceId, status, acquisitionDate])
+}
+
+model AssetDepreciation {
+  id          String     @id @default(uuid())
+  workspaceId String
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  assetId     String
+  asset       FixedAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  periodDate  DateTime
+  amount      BigInt
+  note        String?
+  createdAt   DateTime   @default(now())
+
+  @@unique([assetId, periodDate])
+  @@index([workspaceId, periodDate])
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum BillingCycle {
+  MONTHLY
+  SEMIANNUAL
+  ANNUAL
+}
+
+model WorkspaceSubscription {
+  id                  String             @id @default(uuid())
+  workspaceId         String             @unique
+  workspace           Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  planCode            String             @default("AGHAZ")
+  status              SubscriptionStatus @default(TRIALING)
+  billingCycle        BillingCycle?
+  trialStartedAt      DateTime           @default(now())
+  trialEndsAt         DateTime
+  currentPeriodEndsAt DateTime?
+  activatedAt         DateTime?
+  canceledAt          DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+}
+
+model ApiKey {
+  id          String    @id @default(uuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  prefix      String
+  secretHash  String    @unique
+  scopes      String[]
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([workspaceId, revokedAt])
+}
+
+model ApiAuditLog {
+  id          String   @id @default(uuid())
+  workspaceId String
+  apiKeyId    String?
+  method      String
+  path        String
+  statusCode  Int
+  requestId   String
+  createdAt   DateTime @default(now())
+
+  @@index([workspaceId, createdAt])
+  @@index([requestId])
+}
+
+model ApiRateLimitBucket {
+  id              String   @id
+  workspaceId     String
+  apiKeyId        String
+  windowStartedAt DateTime
+  requestCount    Int      @default(0)
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([workspaceId, apiKeyId, windowStartedAt])
+  @@index([expiresAt])
+}
+
+model AccountingDimensionValue {
+  id          String                          @id @default(uuid())
+  workspaceId String
+  workspace   Workspace                       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  type        AccountingDimensionType
+  code        String
+  name        String
+  active      Boolean                         @default(true)
+  allocations AccountingDimensionAllocation[]
+  createdAt   DateTime                        @default(now())
+  updatedAt   DateTime                        @updatedAt
+
+  @@unique([workspaceId, type, code])
+  @@index([workspaceId, type, active])
+  @@index([workspaceId, name])
+}
+
+model AccountingDimensionAssignment {
+  id            String                          @id @default(uuid())
+  workspaceId   String
+  workspace     Workspace                       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  journalLineId String
+  journalLine   AccountingJournalLine           @relation(fields: [journalLineId], references: [id], onDelete: Cascade)
+  type          AccountingDimensionType
+  allocations   AccountingDimensionAllocation[]
+  createdAt     DateTime                        @default(now())
+  updatedAt     DateTime                        @updatedAt
+
+  @@unique([journalLineId, type])
+  @@index([workspaceId, type])
+  @@index([workspaceId, journalLineId])
+}
+
+model AccountingDimensionAllocation {
+  id               String                        @id @default(uuid())
+  assignmentId     String
+  assignment       AccountingDimensionAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  dimensionValueId String
+  dimensionValue   AccountingDimensionValue      @relation(fields: [dimensionValueId], references: [id], onDelete: Restrict)
+  basisPoints      Int
+  createdAt        DateTime                      @default(now())
+
+  @@unique([assignmentId, dimensionValueId])
+  @@index([dimensionValueId])
+}
+
+model AuditEvent {
+  id          String    @id @default(uuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  actorId     String
+  actorRole   String?
+  actorType   String    @default("USER")
+  action      String
+  category    String
+  severity    String    @default("INFO")
+  entityType  String
+  entityId    String
+  requestId   String?
+  reason      String?
+  beforeState Json?
+  afterState  Json?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, actorId, createdAt])
+  @@index([workspaceId, action, createdAt])
+  @@index([workspaceId, category, createdAt])
+  @@index([workspaceId, entityType, entityId, createdAt])
+  @@index([requestId])
+}
+
+model FinancialEvidence {
+  id               String    @id @default(uuid())
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  category         String
+  sourceEntityType String
+  sourceEntityId   String
+  journalId        String?
+  safeFileName     String
+  mimeType         String
+  byteSize         Int
+  sha256           String
+  storageKey       String
+  description      String?
+  uploadedBy       String
+  archivedAt       DateTime?
+  archivedBy       String?
+  archiveReason    String?
+  createdAt        DateTime  @default(now())
+
+  @@unique([workspaceId, sha256, storageKey])
+  @@index([workspaceId, sourceEntityType, sourceEntityId, createdAt])
+  @@index([workspaceId, category, createdAt])
+  @@index([workspaceId, journalId])
+  @@index([workspaceId, archivedAt])
+}
+
+model CommercialPriceLevel {
+  id                    String    @id @default(uuid())
+  workspaceId           String
+  workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  code                  String
+  name                  String
+  multiplierBasisPoints Int       @default(10000)
+  active                Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([workspaceId, code])
+  @@index([workspaceId, active])
+}
+
+model CommercialDiscountRule {
+  id                    String    @id @default(uuid())
+  workspaceId           String
+  workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  code                  String
+  name                  String
+  percentageBasisPoints Int       @default(0)
+  fixedAmount           BigInt    @default(0)
+  minimumPurchase       BigInt    @default(0)
+  active                Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([workspaceId, code])
+  @@index([workspaceId, active])
+}
+
+model InstallmentPlan {
+  id                String    @id @default(uuid())
+  workspaceId       String
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  code              String
+  name              String
+  installmentCount  Int
+  firstDueDays      Int       @default(0)
+  intervalDays      Int       @default(30)
+  markupBasisPoints Int       @default(0)
+  active            Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([workspaceId, code])
+  @@index([workspaceId, active])
+}
+
+model CommissionRule {
+  id              String    @id @default(uuid())
+  workspaceId     String
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  code            String
+  name            String
+  rateBasisPoints Int
+  basis           String    @default("NET_AFTER_DISCOUNT")
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([workspaceId, code])
+  @@index([workspaceId, active])
+}
+
+model CurrencyRate {
+  id          String    @id @default(uuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  currency    String
+  rateToIrr   BigInt
+  effectiveAt DateTime
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([workspaceId, currency, effectiveAt])
+  @@index([workspaceId, currency, active, effectiveAt])
+}
+
+model ManufacturingBom {
+  id             String                 @id @default(uuid())
+  workspaceId    String
+  workspace      Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  code           String
+  name           String
+  outputItemId   String
+  outputQuantity BigInt
+  active         Boolean                @default(true)
+  lines          ManufacturingBomLine[]
+  orders         ManufacturingOrder[]
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  @@unique([workspaceId, code])
+  @@index([workspaceId, active])
+  @@index([workspaceId, outputItemId])
+}
+
+model ManufacturingBomLine {
+  id                 String           @id @default(uuid())
+  bomId              String
+  bom                ManufacturingBom @relation(fields: [bomId], references: [id], onDelete: Cascade)
+  componentItemId    String
+  quantityMinorUnits BigInt
+  wasteBasisPoints   Int              @default(0)
+  createdAt          DateTime         @default(now())
+
+  @@index([bomId])
+  @@index([componentItemId])
+}
+
+model ManufacturingOrder {
+  id                    String           @id @default(uuid())
+  workspaceId           String
+  workspace             Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  bomId                 String
+  bom                   ManufacturingBom @relation(fields: [bomId], references: [id], onDelete: Restrict)
+  warehouseId           String
+  orderNumber           String
+  plannedOutputQuantity BigInt
+  actualOutputQuantity  BigInt?
+  materialCost          BigInt?
+  overheadCost          BigInt           @default(0)
+  laborCost             BigInt           @default(0)
+  status                String           @default("DRAFT")
+  startedAt             DateTime?
+  completedAt           DateTime?
+  createdBy             String
+  completedBy           String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  @@unique([workspaceId, orderNumber])
+  @@index([workspaceId, status, createdAt])
+}
+
+model TaxSubmission {
+  id                String    @id @default(uuid())
+  workspaceId       String
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  sourceType        String
+  sourceDocumentId  String
+  invoiceNumber     String
+  taxpayerId        String?
+  payloadHash       String
+  idempotencyKey    String
+  status            String    @default("QUEUED")
+  provider          String    @default("MODIAN")
+  providerReference String?
+  errorCode         String?
+  errorMessage      String?
+  submittedAt       DateTime?
+  acceptedAt        DateTime?
+  createdBy         String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([workspaceId, idempotencyKey])
+  @@index([workspaceId, status, createdAt])
+  @@index([workspaceId, sourceDocumentId])
+}
+
+model NotificationTemplate {
+  id          String    @id @default(uuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  code        String
+  name        String
+  channel     String
+  subject     String?
+  body        String
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([workspaceId, code])
+  @@index([workspaceId, channel, active])
+}
+
+model OperationalNotification {
+  id                String    @id @default(uuid())
+  workspaceId       String
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  templateId        String?
+  channel           String
+  recipient         String
+  subject           String?
+  body              String
+  scheduledAt       DateTime?
+  status            String    @default("QUEUED")
+  idempotencyKey    String
+  providerReference String?
+  errorMessage      String?
+  sentAt            DateTime?
+  createdBy         String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([workspaceId, idempotencyKey])
+  @@index([workspaceId, status, scheduledAt])
+}
+
+model DataImportJob {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  actorId      String
+  entityType   String
+  filename     String
+  sourceHash   String
+  mode         String
+  status       String
+  totalRows    Int
+  acceptedRows Int
+  rejectedRows Int
+  errorReport  Json?
+  committedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, status])
+}
+
+model RestoreRehearsalEvidence {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  actorId        String
+  backupChecksum String
+  schemaVersion  String
+  rowCountMatch  Boolean
+  checksumMatch  Boolean
+  schemaValid    Boolean
+  passed         Boolean
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+}
+
+model OnboardingDraft {
+  id                        String                     @id @default(uuid())
+  userId                    String                     @unique
+  user                      User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referralSource            String?
+  termsAcceptedAt           DateTime?
+  businessName              String?
+  defaultLanguage           BusinessLanguage           @default(FA)
+  legalName                 String?
+  businessType              String?
+  activityField             String?
+  nationalId                String?
+  economicCode              String?
+  registrationNumber        String?
+  country                   String?
+  province                  String?
+  city                      String?
+  postalCode                String?
+  businessPhone             String?
+  fax                       String?
+  address                   String?
+  website                   String?
+  businessEmail             String?
+  inventoryAccountingSystem InventoryAccountingSystem?
+  inventoryValuationMethod  InventoryValuationMethod   @default(FIFO)
+  manufacturingEnabled      Boolean                    @default(false)
+  inventoryEnabled          Boolean                    @default(true)
+  multiCurrencyEnabled      Boolean                    @default(false)
+  baseCurrency              String                     @default("IRR")
+  vatRateBasisPoints        Int                        @default(1000)
+  calendar                  BusinessCalendar           @default(SOLAR_HIJRI)
+  fiscalYearStartsAt        DateTime?
+  fiscalYearEndsAt          DateTime?
+  fiscalYearTitle           String?
+  step                      Int                        @default(1)
+  completedAt               DateTime?
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+}
+
+model OnboardingVerificationChallenge {
+  id         String                        @id @default(uuid())
+  userId     String
+  user       User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel    OnboardingVerificationChannel
+  codeHash   String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  attempts   Int                           @default(0)
+  createdAt  DateTime                      @default(now())
+
+  @@index([userId, channel, expiresAt])
+}
+
+model WorkspaceBusinessProfile {
+  id                 String           @id @default(uuid())
+  workspaceId        String           @unique
+  workspace          Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  legalName          String
+  defaultLanguage    BusinessLanguage @default(FA)
+  businessType       String
+  activityField      String?
+  nationalId         String?
+  economicCode       String?
+  registrationNumber String?
+  country            String?
+  province           String?
+  city               String?
+  postalCode         String?
+  phone              String?
+  fax                String?
+  address            String?
+  website            String?
+  email              String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+}
+
+model WorkspaceAccountingSettings {
+  id                        String                    @id @default(uuid())
+  workspaceId               String                    @unique
+  workspace                 Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  inventoryAccountingSystem InventoryAccountingSystem
+  inventoryValuationMethod  InventoryValuationMethod  @default(FIFO)
+  manufacturingEnabled      Boolean                   @default(false)
+  inventoryEnabled          Boolean                   @default(true)
+  multiCurrencyEnabled      Boolean                   @default(false)
+  baseCurrency              String                    @default("IRR")
+  vatRateBasisPoints        Int                       @default(1000)
+  calendar                  BusinessCalendar          @default(SOLAR_HIJRI)
+  fiscalYearStartsAt        DateTime
+  fiscalYearEndsAt          DateTime
+  fiscalYearTitle           String
+  createdAt                 DateTime                  @default(now())
+  updatedAt                 DateTime                  @updatedAt
 }

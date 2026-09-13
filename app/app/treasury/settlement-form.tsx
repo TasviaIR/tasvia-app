@@ -1,5 +1,7 @@
 "use client";
 
+import { JalaliDateInput } from "../../../src/components/date/jalali-date-input";
+
 import { useActionState, useState } from "react";
 import {
   submitSettlementAction,
@@ -110,12 +112,7 @@ export function TreasurySettlementForm({
 
       <label className="text-xs font-black text-slate-600">
         تاریخ
-        <input
-          name="occurredAt"
-          required
-          type="date"
-          className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm"
-        />
+        <JalaliDateInput name="occurredAt" required className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm" />
       </label>
 
       <label className="text-xs font-black text-slate-600 md:col-span-2 xl:col-span-3">

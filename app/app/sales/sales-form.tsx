@@ -1,5 +1,6 @@
 "use client";
 
+import { JalaliDateInput } from "../../../src/components/date/jalali-date-input";
 import { useActionState } from "react";
 import { createSaleAction, type SalesActionState } from "./actions";
 
@@ -25,8 +26,8 @@ export function SalesForm({
       <label className="text-xs font-black text-slate-600">مشتری<select name="customerId" required className={field}><option value="">انتخاب مشتری</option>{customers.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
       <label className="text-xs font-black text-slate-600">انبار<select name="warehouseId" required className={field}><option value="">انتخاب انبار</option>{warehouses.map((x) => <option key={x.id} value={x.id}>{x.name} · {x.code}</option>)}</select></label>
       <label className="text-xs font-black text-slate-600">کالا / خدمت<select name="itemId" required className={field}><option value="">انتخاب قلم</option>{items.map((x) => <option key={x.id} value={x.id}>{x.name}{x.sku ? ` · ${x.sku}` : ""}</option>)}</select></label>
-      <label className="text-xs font-black text-slate-600">تاریخ فاکتور<input name="issuedAt" type="date" required className={field} /></label>
-      <label className="text-xs font-black text-slate-600">سررسید<input name="dueAt" type="date" required className={field} /></label>
+      <label className="text-xs font-black text-slate-600">تاریخ فاکتور<JalaliDateInput name="issuedAt" required className={field} /></label>
+      <label className="text-xs font-black text-slate-600">سررسید<JalaliDateInput name="dueAt" required className={field} /></label>
       <label className="text-xs font-black text-slate-600">تعداد<input name="quantity" required inputMode="numeric" className={field} /></label>
       <label className="text-xs font-black text-slate-600">قیمت واحد (ریال)<input name="unitPrice" required inputMode="numeric" className={field} /></label>
       <label className="text-xs font-black text-slate-600">تخفیف (ریال)<input name="discount" defaultValue="0" inputMode="numeric" className={field} /></label>

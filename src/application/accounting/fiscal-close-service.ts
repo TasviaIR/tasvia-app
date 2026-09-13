@@ -1,5 +1,7 @@
 import { prisma } from "../../lib/prisma";
 import { assertFinancialWriteEnvironment } from "./simple-workflow-persistence";
+import { assertWorkspaceWriteEntitlement } from "../subscription/workspace-entitlement";
+import { recordAuditEventInTransaction } from "../audit/audit-service";
 
 export async function listFiscalPeriods(workspaceId: string) {
   return prisma.fiscalPeriod.findMany({
@@ -62,6 +64,7 @@ export async function closeFiscalPeriod(input: {
   fiscalPeriodId: string;
 }) {
   assertFinancialWriteEnvironment();
+  await assertWorkspaceWriteEntitlement(input.workspaceId);
 
   return prisma.$transaction(async (tx) => {
     const period = await tx.fiscalPeriod.findFirst({
@@ -83,10 +86,24 @@ export async function closeFiscalPeriod(input: {
 
     if (drafts > 0) throw new Error("FISCAL_CLOSE_DRAFT_JOURNALS");
 
-    return tx.fiscalPeriod.update({
+    const updated = await tx.fiscalPeriod.update({
       where: { id: period.id },
       data: { status: "CLOSED" },
     });
+
+    await recordAuditEventInTransaction(tx, {
+      workspaceId: input.workspaceId,
+      actorId: input.actorId,
+      action: "FISCAL_PERIOD_CLOSED",
+      category: "FISCAL_CONTROL",
+      severity: "WARNING",
+      entityType: "FiscalPeriod",
+      entityId: period.id,
+      before: { status: period.status },
+      after: { status: updated.status },
+    });
+
+    return updated;
   });
 }
 
@@ -97,6 +114,7 @@ export async function reopenFiscalPeriod(input: {
   reason: string;
 }) {
   assertFinancialWriteEnvironment();
+  await assertWorkspaceWriteEntitlement(input.workspaceId);
 
   const reason = input.reason.trim();
   if (reason.length < 10) throw new Error("FISCAL_REOPEN_REASON_REQUIRED");
@@ -112,10 +130,39 @@ export async function reopenFiscalPeriod(input: {
     if (!period) throw new Error("FISCAL_PERIOD_NOT_FOUND");
     if (period.status === "OPEN") return period;
 
-    return tx.fiscalPeriod.update({
+    const reopenedAt = new Date();
+
+    const updated = await tx.fiscalPeriod.update({
       where: { id: period.id },
       data: { status: "OPEN" },
     });
+
+    await tx.fiscalReopenAudit.create({
+      data: {
+        workspaceId: input.workspaceId,
+        fiscalPeriodId: period.id,
+        actorId: input.actorId,
+        reason,
+        beforeStatus: period.status,
+        afterStatus: updated.status,
+        occurredAt: reopenedAt,
+      },
+    });
+
+    await recordAuditEventInTransaction(tx, {
+      workspaceId: input.workspaceId,
+      actorId: input.actorId,
+      action: "FISCAL_PERIOD_REOPENED",
+      category: "FISCAL_CONTROL",
+      severity: "CRITICAL",
+      entityType: "FiscalPeriod",
+      entityId: period.id,
+      reason,
+      before: { status: period.status },
+      after: { status: updated.status },
+    });
+
+    return updated;
   });
 }
 
@@ -127,6 +174,7 @@ export async function reversePostedJournal(input: {
   occurredAt: Date;
 }) {
   assertFinancialWriteEnvironment();
+  await assertWorkspaceWriteEntitlement(input.workspaceId);
 
   const reason = input.reason.trim();
   if (reason.length < 10) throw new Error("REVERSAL_REASON_REQUIRED");
@@ -191,6 +239,30 @@ export async function reversePostedJournal(input: {
       },
     });
 
+    await recordAuditEventInTransaction(tx, {
+      workspaceId: input.workspaceId,
+      actorId: input.actorId,
+      action: "ACCOUNTING_JOURNAL_REVERSED",
+      category: "ACCOUNTING",
+      severity: "CRITICAL",
+      entityType: "AccountingJournal",
+      entityId: original.id,
+      reason,
+      before: { status: original.status },
+      after: { status: "REVERSED" },
+      metadata: { reversalJournalId: reversal.id },
+    });
+
     return reversal;
+  });
+}
+export async function listFiscalReopenAudits(
+  workspaceId: string,
+  fiscalPeriodId: string,
+) {
+  return prisma.fiscalReopenAudit.findMany({
+    where: { workspaceId, fiscalPeriodId },
+    orderBy: { occurredAt: "desc" },
+    take: 100,
   });
 }

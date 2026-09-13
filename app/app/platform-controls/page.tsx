@@ -1,20 +1,39 @@
 import Link from "next/link";
 import { WorkspaceShell } from "../../../src/components/workspace/shell";
+import { requireCurrentWorkspace } from "../../../src/auth/current-workspace";
+import { prisma } from "../../../src/lib/prisma";
 
-const controls = [
-  ["سامانه مودیان", "صف ارسال صورتحساب الکترونیکی با idempotency، وضعیت ارسال و مرجع پذیرش یا رد."],
-  ["استعلام‌های رسمی", "هویت، شبا، کارت و کدپستی با Provider رسمی و مجوز محیط عملیاتی."],
-  ["کارتخوان و POS", "ثبت ترمینال، Provider، حساب بانکی مقصد و وضعیت فعال برای تطبیق خزانه."],
-  ["تأییدهای چندمرحله‌ای", "کنترل عملیات حساس بر اساس نقش، نوع عملیات و حداقل تعداد تأیید."],
-  ["پشتیبان‌گیری و بازیابی", "Manifest نسخه‌دار، checksum و الزام رمزنگاری برای داده‌های مالی و مدارک."],
-  ["فارسی و انگلیسی", "زیرساخت locale محصول با فارسی به‌عنوان زبان پیش‌فرض و انگلیسی برای تجربه بین‌المللی."],
-] as const;
+export default async function PlatformControlsPage() {
+  const current = await requireCurrentWorkspace();
 
-export default function PlatformControlsPage() {
+  const [apiKeys, members, auditEvents] = await Promise.all([
+    prisma.apiKey.count({ where: { workspaceId: current.workspace.id, revokedAt: null } }),
+    prisma.membership.count({ where: { workspaceId: current.workspace.id, status: "ACTIVE" } }),
+    prisma.auditEvent.count({ where: { workspaceId: current.workspace.id } }),
+  ]);
+
+  const modules = [
+    ["/app/api-keys", "API و کلیدهای دسترسی", `${apiKeys} کلید فعال`, "Scope، Rotate، Revoke، Rate Limit و Audit"],
+    ["/developers", "مستندات توسعه‌دهندگان", "API V1", "قراردادهای اتصال و مسیرهای Read API"],
+    ["/app/audit", "امنیت و Audit", `${auditEvents} رویداد`, "ردپای غیرقابل‌تغییر عملیات حساس"],
+    ["/app/subscription", "اشتراک و Entitlement", "کنترل دسترسی", "Trial و قفل مرکزی عملیات مالی"],
+    ["/app/data-portability", "انتقال داده و بازیابی", "Import / Export", "Dry Run، CSV، Audit و Restore Evidence"],
+    ["/app", "اعضای Workspace", `${members} عضو فعال`, "Workspace isolation و Role context"],
+    ["/app/reconciliation", "اتصال بانکی امن", "Sandbox-first", "هیچ Provider عملیاتی بدون مجوز Production فعال نمی‌شود"],
+  ] as const;
+
   return (
-    <WorkspaceShell title="تنظیمات و اتصال" eyebrow="انطباق و امنیت" actions={<Link href="/app/operations-controls" className="rounded-xl bg-[#102845] px-3 py-2 text-xs font-black text-white">عملیات</Link>}>
-      <section className="rounded-[26px] bg-[#102845] p-5 text-white sm:p-7"><h2 className="text-2xl font-black">مرز امن اتصال تسوین به سرویس‌های رسمی.</h2><p className="mt-3 max-w-3xl text-sm leading-7 text-white/65">هیچ عملیات بانکی، مالیاتی یا استعلام واقعی بدون Provider معتبر، credential سالم و مجوز Production فعال نمی‌شود.</p></section>
-      <section className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{controls.map(([title, description]) => <article key={title} className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex items-center justify-between gap-3"><h2 className="font-black">{title}</h2><span className="rounded-full bg-[#eef3f8] px-2.5 py-1 text-[10px] font-black text-[#536176]">محافظت‌شده</span></div><p className="mt-3 text-sm leading-7 text-[#657184]">{description}</p></article>)}</section>
+    <WorkspaceShell title="تنظیمات، امنیت و اتصال" eyebrow="API، دسترسی، اشتراک، Audit و مرز اتصال سرویس‌ها">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {modules.map(([href,title,value,description]) => (
+          <Link key={href} href={href} className="rounded-3xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-[#008f87]/40">
+            <div className="text-xs font-black text-[#008f87]">{value}</div>
+            <h2 className="mt-2 text-lg font-black text-[#0f223d]">{title}</h2>
+            <p className="mt-3 text-xs leading-6 text-slate-500">{description}</p>
+            <div className="mt-5 text-xs font-black text-[#00776f]">ورود ←</div>
+          </Link>
+        ))}
+      </section>
     </WorkspaceShell>
   );
 }
