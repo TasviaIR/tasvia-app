@@ -1,5 +1,6 @@
 "use server";
 
+import { parseJalaliDate } from "../../src/lib/tasvin-date";
 import { randomUUID } from "node:crypto";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -98,8 +99,8 @@ export async function completeBusinessSetupAction(formData: FormData): Promise<v
   const vatPercent = Number(text(formData, "vatRate", true, 16));
   if (!Number.isFinite(vatPercent) || vatPercent < 0 || vatPercent > 100) throw new Error("VAT_RATE_INVALID");
   const calendar: BusinessCalendar = text(formData, "calendar") === "GREGORIAN" ? "GREGORIAN" : "SOLAR_HIJRI";
-  const fiscalYearStartsAt = date(formData, "fiscalYearStartsAt");
-  const fiscalYearEndsAt = date(formData, "fiscalYearEndsAt");
+  const fiscalYearStartsAt = parseJalaliDate(String(formData.get("fiscalYearStartsAt") ?? ""));
+  const fiscalYearEndsAt = parseJalaliDate(String(formData.get("fiscalYearEndsAt") ?? ""));
   if (fiscalYearEndsAt <= fiscalYearStartsAt) throw new Error("FISCAL_YEAR_RANGE_INVALID");
   const fiscalYearTitle = text(formData, "fiscalYearTitle", true, 120);
   const startedAt = new Date();

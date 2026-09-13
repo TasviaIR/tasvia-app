@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireCurrentWorkspace } from "../../../src/auth/current-workspace";
+import { parseJalaliDate } from "../../../src/lib/tasvin-date";
 import {
   createCheque,
   updateChequeStatus,
@@ -27,8 +28,8 @@ export async function createChequeAction(
       return { ok: false, message: "اجازه ثبت چک ندارید." };
     }
 
-    const issuedAt = new Date(String(formData.get("issuedAt") ?? ""));
-    const dueAt = new Date(String(formData.get("dueAt") ?? ""));
+    const issuedAt = parseJalaliDate(String(formData.get("issuedAt") ?? ""));
+    const dueAt = parseJalaliDate(String(formData.get("dueAt") ?? ""));
 
     await createCheque({
       workspaceId: current.workspace.id,

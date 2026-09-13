@@ -1,5 +1,6 @@
 "use server";
 
+import { parseJalaliDate } from "../../../src/lib/tasvin-date";
 import { revalidatePath } from "next/cache";
 import { prisma } from "../../../src/lib/prisma";
 import { requireCurrentWorkspace } from "../../../src/auth/current-workspace";
@@ -22,7 +23,7 @@ export async function createFixedAssetAction(fd: FormData) {
   const acquisitionCost = money(fd, "acquisitionCost");
   const residualValue = money(fd, "residualValue");
   const usefulLifeMonths = Number(text(fd, "usefulLifeMonths"));
-  const acquisitionDate = new Date(text(fd, "acquisitionDate"));
+  const acquisitionDate = parseJalaliDate(text(fd, "acquisitionDate"));
 
   monthlyStraightLine(acquisitionCost, residualValue, usefulLifeMonths);
   if (!code || !name || !Number.isFinite(acquisitionDate.getTime())) throw new Error("ASSET_REQUIRED_FIELDS");
@@ -65,7 +66,7 @@ export async function postDepreciationAction(fd: FormData) {
   if (c.role === "VIEWER") throw new Error("ASSET_WRITE_FORBIDDEN");
 
   const assetId = text(fd, "assetId");
-  const periodDate = new Date(text(fd, "periodDate"));
+  const periodDate = parseJalaliDate(text(fd, "periodDate"));
 
   const asset = await prisma.fixedAsset.findFirst({
     where: { id: assetId, workspaceId: c.workspace.id, status: "ACTIVE" },

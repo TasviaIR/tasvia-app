@@ -1,3 +1,5 @@
+import { JalaliDateInput } from "../../../../src/components/date/jalali-date-input";
+import { toJalaliInputValue } from "../../../../src/lib/tasvin-date";
 import type { AccountingDimensionType } from "@prisma/client";
 import Link from "next/link";
 import { WorkspaceShell } from "../../../../src/components/workspace/shell";
@@ -38,8 +40,8 @@ export default async function FinancialReportsPage({ searchParams }: { searchPar
   return (
     <WorkspaceShell title="گزارش‌های مالی حرفه‌ای" eyebrow="دفتر، تراز و صورت‌های مالی فقط بر پایه اسناد ثبت قطعی" actions={<div className="flex flex-wrap gap-2"><a href={`/app/reports/financial/export?${exportParams.toString()}`} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black">خروجی CSV</a><Link href="/app/dimensions/assignments" className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black">ابعاد مالی</Link></div>}>
       <form method="get" className="grid gap-3 rounded-3xl border border-slate-200 bg-white p-5 md:grid-cols-5">
-        <input type="date" name="from" defaultValue={typeof params.from === "string" ? params.from : ""} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-        <input type="date" name="to" defaultValue={typeof params.to === "string" ? params.to : ""} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+        <JalaliDateInput name="from" defaultValue={typeof params.from === "string" && params.from ? toJalaliInputValue(new Date(params.from)) : ""} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+        <JalaliDateInput name="to" defaultValue={typeof params.to === "string" && params.to ? toJalaliInputValue(new Date(params.to)) : ""} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
         <select name="dimensionType" defaultValue={dimensionType ?? ""} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="">همه ابعاد</option><option value="BRANCH">شعبه</option><option value="COST_CENTER">مرکز هزینه</option><option value="PROJECT">پروژه</option></select>
         <select name="dimensionValueId" defaultValue={dimensionValueId ?? ""} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="">همه مقادیر</option>{dimensions.filter((item) => !dimensionType || item.type === dimensionType).map((item) => <option key={item.id} value={item.id}>{item.code} — {item.name}</option>)}</select>
         <button className="rounded-xl bg-[#0f223d] px-4 py-2 text-sm font-black text-white">اعمال فیلتر</button>

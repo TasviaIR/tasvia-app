@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { auth, authConfigured } from "../../../../src/lib/auth";
 import { prisma } from "../../../../src/lib/prisma";
+import { parseJalaliDate } from "../../../../src/lib/tasvin-date";
 import {
   auditEventsToCsv,
   listAuditEvents,
@@ -8,8 +9,11 @@ import {
 
 function parseDate(value: string | null, endOfDay = false) {
   if (!value) return undefined;
-  const date = new Date(`${value}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}`);
-  return Number.isNaN(date.getTime()) ? undefined : date;
+  try {
+    return parseJalaliDate(value, { endOfDay });
+  } catch {
+    return undefined;
+  }
 }
 
 export async function GET(request: Request) {

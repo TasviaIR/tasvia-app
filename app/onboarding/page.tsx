@@ -1,3 +1,5 @@
+import { JalaliDateInput } from "../../src/components/date/jalali-date-input";
+import { toJalaliInputValue } from "../../src/lib/tasvin-date";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -108,8 +110,8 @@ export default async function OnboardingPage({ searchParams }: Props) {
               <Field name="vatRate" label="نرخ مالیات بر ارزش افزوده (%)" required type="number" min="0" max="100" step="0.01" defaultValue={String((draft?.vatRateBasisPoints ?? 1000) / 100)} dir="ltr" />
               <SelectField name="calendar" label="تقویم" required defaultValue={draft?.calendar ?? "SOLAR_HIJRI"} options={[["SOLAR_HIJRI", "هجری شمسی"],["GREGORIAN", "میلادی"]]} />
               <Field name="fiscalYearTitle" label="عنوان سال مالی" required defaultValue={draft?.fiscalYearTitle ?? "سال مالی جاری"} />
-              <Field name="fiscalYearStartsAt" label="شروع سال مالی" required type="date" defaultValue={draft?.fiscalYearStartsAt ? draft.fiscalYearStartsAt.toISOString().slice(0,10) : ""} dir="ltr" />
-              <Field name="fiscalYearEndsAt" label="پایان سال مالی" required type="date" defaultValue={draft?.fiscalYearEndsAt ? draft.fiscalYearEndsAt.toISOString().slice(0,10) : ""} dir="ltr" />
+              <label className="grid gap-2 text-sm font-bold">شروع سال مالی<JalaliDateInput name="fiscalYearStartsAt" required defaultValue={draft?.fiscalYearStartsAt ? toJalaliInputValue(draft.fiscalYearStartsAt) : ""} className="input" /></label>
+              <label className="grid gap-2 text-sm font-bold">پایان سال مالی<JalaliDateInput name="fiscalYearEndsAt" required defaultValue={draft?.fiscalYearEndsAt ? toJalaliInputValue(draft.fiscalYearEndsAt) : ""} className="input" /></label>
             </div>
             <div className="mt-6 grid gap-3 md:grid-cols-3">
               <Toggle name="inventoryEnabled" title="سیستم انبار" description="مدیریت کالا، موجودی و گردش انبار" defaultChecked={draft?.inventoryEnabled ?? true} />

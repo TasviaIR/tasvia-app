@@ -2,6 +2,8 @@
 
 import { useActionState, useState } from "react";
 import { submitSimpleAccountingAction, type SimpleActionState } from "./actions";
+import { JalaliDateInput } from "../../../../src/components/date/jalali-date-input";
+import { toJalaliInputValue } from "../../../../src/lib/tasvin-date";
 
 export type SimpleActionOption = {
   id: string;
@@ -20,7 +22,7 @@ export function SimpleActionForm({
 }) {
   const [state, formAction, pending] = useActionState(submitSimpleAccountingAction, initialState);
   const [commandId, setCommandId] = useState(() => crypto.randomUUID());
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toJalaliInputValue(new Date());
   const needsCounterparty = action === "sale" || action === "purchase";
   const needsBalance = action === "receipt" || action === "payment";
 
@@ -42,7 +44,7 @@ export function SimpleActionForm({
         </label>
         <label className="block">
           <span className="mb-2 block text-sm font-black text-[#26354a]">تاریخ ثبت</span>
-          <input name="occurredAt" type="date" required defaultValue={today} className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-[#0b8d85] focus:ring-4 focus:ring-[#0b8d85]/10" />
+          <JalaliDateInput name="occurredAt" required defaultValue={today} className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-[#0b8d85] focus:ring-4 focus:ring-[#0b8d85]/10" />
         </label>
       </div>
 
@@ -57,7 +59,7 @@ export function SimpleActionForm({
           </label>
           <label className="block">
             <span className="mb-2 block text-sm font-black text-[#26354a]">سررسید</span>
-            <input name="dueAt" type="date" required defaultValue={today} className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-[#0b8d85]" />
+            <JalaliDateInput name="dueAt" required defaultValue={today} className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-[#0b8d85]" />
           </label>
         </div>
       ) : null}

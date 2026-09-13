@@ -1,5 +1,6 @@
 "use client";
 
+import { JalaliDateInput } from "../../../src/components/date/jalali-date-input";
 import { useActionState } from "react";
 import { createPurchaseAction, type PurchaseActionState } from "./actions";
 
@@ -25,8 +26,8 @@ export function PurchaseForm({
       <label className="text-xs font-black text-slate-600">تأمین‌کننده<select name="supplierId" required className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm"><option value="">انتخاب کنید</option>{suppliers.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>
       <label className="text-xs font-black text-slate-600">انبار<select name="warehouseId" required className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm"><option value="">انتخاب کنید</option>{warehouses.map((option) => <option key={option.id} value={option.id}>{option.name} · {option.code}</option>)}</select></label>
       <label className="text-xs font-black text-slate-600">کالا / خدمت<select name="itemId" required className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm"><option value="">انتخاب کنید</option>{items.map((option) => <option key={option.id} value={option.id}>{option.name}{option.sku ? ` · ${option.sku}` : ""}</option>)}</select></label>
-      <label className="text-xs font-black text-slate-600">تاریخ فاکتور<input name="issuedAt" type="date" required className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm" /></label>
-      <label className="text-xs font-black text-slate-600">سررسید<input name="dueAt" type="date" required className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm" /></label>
+      <label className="text-xs font-black text-slate-600">تاریخ فاکتور<JalaliDateInput name="issuedAt" required className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm" /></label>
+      <label className="text-xs font-black text-slate-600">سررسید<JalaliDateInput name="dueAt" required className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm" /></label>
       <label className="text-xs font-black text-slate-600">تعداد<input name="quantity" inputMode="numeric" required className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm" /></label>
       <label className="text-xs font-black text-slate-600">قیمت واحد (ریال)<input name="unitPrice" inputMode="numeric" required className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm" /></label>
       <label className="text-xs font-black text-slate-600">تخفیف (ریال)<input name="discount" inputMode="numeric" defaultValue="0" className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm" /></label>

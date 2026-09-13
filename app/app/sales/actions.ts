@@ -1,5 +1,6 @@
 "use server";
 
+import { parseJalaliDate } from "../../../src/lib/tasvin-date";
 import { revalidatePath } from "next/cache";
 import { requireCurrentWorkspace } from "../../../src/auth/current-workspace";
 import {
@@ -41,8 +42,8 @@ export async function createSaleAction(
       return { ok: false, message: "اجازه ثبت فروش ندارید." };
     }
 
-    const issuedAt = new Date(String(formData.get("issuedAt")));
-    const dueAt = new Date(String(formData.get("dueAt")));
+    const issuedAt = parseJalaliDate(String(formData.get("issuedAt") ?? ""));
+    const dueAt = parseJalaliDate(String(formData.get("dueAt") ?? ""));
 
     if (
       Number.isNaN(issuedAt.getTime()) ||

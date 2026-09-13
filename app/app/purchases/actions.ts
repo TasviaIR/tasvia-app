@@ -1,5 +1,6 @@
 "use server";
 
+import { parseJalaliDate } from "../../../src/lib/tasvin-date";
 import { revalidatePath } from "next/cache";
 import { requireCurrentWorkspace } from "../../../src/auth/current-workspace";
 import {
@@ -58,8 +59,8 @@ export async function createPurchaseAction(
       supplierId: String(formData.get("supplierId") ?? "").trim(),
       warehouseId: String(formData.get("warehouseId") ?? "").trim(),
       invoiceNumber: String(formData.get("invoiceNumber") ?? "").trim(),
-      issuedAt: parseDate(formData.get("issuedAt")),
-      dueAt: parseDate(formData.get("dueAt")),
+      issuedAt: parseJalaliDate(String(formData.get("issuedAt") ?? "")),
+      dueAt: parseJalaliDate(String(formData.get("dueAt") ?? "")),
       lines: [{
         itemId: String(formData.get("itemId") ?? "").trim(),
         quantityMinorUnits: positiveBigInt(formData.get("quantity"), "تعداد"),

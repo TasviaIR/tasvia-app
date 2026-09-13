@@ -1,5 +1,6 @@
 "use server";
 
+import { parseJalaliDate } from "../../../src/lib/tasvin-date";
 import { revalidatePath } from "next/cache";
 import { prisma } from "../../../src/lib/prisma";
 import { requireCurrentWorkspace } from "../../../src/auth/current-workspace";
@@ -64,8 +65,8 @@ export async function createPayrollRunAction(fd: FormData) {
   const grossPay = money(fd, "grossPay");
   const deductions = money(fd, "deductions");
   const netPay = payrollNet(grossPay, deductions);
-  const periodStart = new Date(text(fd, "periodStart"));
-  const periodEnd = new Date(text(fd, "periodEnd"));
+  const periodStart = parseJalaliDate(text(fd, "periodStart"));
+  const periodEnd = parseJalaliDate(text(fd, "periodEnd"));
 
   if (!Number.isFinite(periodStart.getTime()) || !Number.isFinite(periodEnd.getTime()) || periodEnd < periodStart) {
     throw new Error("PAYROLL_PERIOD_INVALID");

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { WorkspaceShell } from "../../../src/components/workspace/shell";
+import { JalaliDateInput } from "../../../src/components/date/jalali-date-input";
+import { formatTasvinDate } from "../../../src/lib/tasvin-date";
 import { requireCurrentWorkspace } from "../../../src/auth/current-workspace";
 import { listReconciliationWorkspace, reconciliationConfidence } from "../../../src/application/reconciliation/reconciliation-service";
 import { createEvidenceAction, matchEvidenceAction } from "./actions";
@@ -41,7 +43,7 @@ export default async function ReconciliationPage() {
         </select>
         <input name="externalRef" required placeholder="مرجع بانک" className="rounded-xl border p-3" />
         <input name="amount" required placeholder="مبلغ" className="rounded-xl border p-3" />
-        <input name="occurredAt" type="date" required className="rounded-xl border p-3" />
+        <JalaliDateInput name="occurredAt" required className="rounded-xl border p-3" />
         <button className="rounded-xl bg-[#102845] p-3 font-black text-white">ثبت شاهد بانکی</button>
       </form>
 
@@ -75,7 +77,7 @@ export default async function ReconciliationPage() {
                 <tr key={e.id} className="border-t">
                   <td className="p-4 font-black">{e.externalRef}</td>
                   <td className="p-4">{new Intl.NumberFormat("fa-IR").format(e.amount)} ریال</td>
-                  <td className="p-4">{new Intl.DateTimeFormat("fa-IR").format(e.occurredAt)}</td>
+                  <td className="p-4">{formatTasvinDate(e.occurredAt)}</td>
                   <td className="p-4"><span className="rounded-lg bg-slate-100 px-2.5 py-1.5 font-black text-slate-600">{e.status === "PENDING" ? "در انتظار" : e.status === "MATCHED" ? "تطبیق‌شده" : "ردشده"}</span></td>
                   <td className="p-4">{best?.line.journal.description ?? "—"}</td>
                   <td className="p-4">{best ? `${new Intl.NumberFormat("fa-IR").format(best.score)}٪` : "—"}</td>

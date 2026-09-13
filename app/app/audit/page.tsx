@@ -1,6 +1,8 @@
 import { WorkspaceShell } from "../../../src/components/workspace/shell";
 import { requireCurrentWorkspace } from "../../../src/auth/current-workspace";
 import { listAuditEvents } from "../../../src/application/audit/audit-service";
+import { JalaliDateInput } from "../../../src/components/date/jalali-date-input";
+import { formatTasvinDateTime, parseJalaliDate } from "../../../src/lib/tasvin-date";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -11,8 +13,11 @@ function value(input: string | string[] | undefined): string | undefined {
 function parseDate(input: string | string[] | undefined, endOfDay = false): Date | undefined {
   const raw = value(input);
   if (!raw) return undefined;
-  const parsed = new Date(`${raw}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}`);
-  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+  try {
+    return parseJalaliDate(raw, { endOfDay });
+  } catch {
+    return undefined;
+  }
 }
 
 const severityLabel: Record<string, string> = {
@@ -66,8 +71,8 @@ export default async function AuditPage({ searchParams }: { searchParams: Search
           <option value="WARNING">هشدار</option>
           <option value="CRITICAL">حساس</option>
         </select>
-        <input type="date" name="from" defaultValue={value(params.from) ?? ""} className="rounded-xl border border-slate-200 px-3 py-2 text-xs" />
-        <input type="date" name="to" defaultValue={value(params.to) ?? ""} className="rounded-xl border border-slate-200 px-3 py-2 text-xs" />
+        <JalaliDateInput name="from" defaultValue={value(params.from) ?? ""} className="rounded-xl border border-slate-200 px-3 py-2 text-xs" />
+        <JalaliDateInput name="to" defaultValue={value(params.to) ?? ""} className="rounded-xl border border-slate-200 px-3 py-2 text-xs" />
         <button className="rounded-xl bg-[#0f223d] px-4 py-2 text-xs font-black text-white">اعمال</button>
       </form>
 
@@ -87,7 +92,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Search
                 <div className="text-left">
                   <div className="text-xs font-black text-[#008f87]">{severityLabel[event.severity] ?? event.severity}</div>
                   <time dateTime={event.createdAt.toISOString()} className="mt-1 block text-[11px] text-slate-400">
-                    {event.createdAt.toLocaleString("fa-IR")}
+                    {formatTasvinDateTime(event.createdAt)}
                   </time>
                 </div>
               </div>

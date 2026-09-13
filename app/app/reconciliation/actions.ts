@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireCurrentWorkspace } from "../../../src/auth/current-workspace";
+import { parseJalaliDate } from "../../../src/lib/tasvin-date";
 import {
   createBankEvidence,
   decideEvidence,
@@ -12,7 +13,7 @@ export async function createEvidenceAction(formData: FormData): Promise<void> {
   if (current.role === "VIEWER") return;
 
   const amount = BigInt(String(formData.get("amount") ?? "0").replace(/[,_،\s]/g, ""));
-  const occurredAt = new Date(String(formData.get("occurredAt") ?? ""));
+  const occurredAt = parseJalaliDate(String(formData.get("occurredAt") ?? ""));
 
   await createBankEvidence({
     workspaceId: current.workspace.id,
